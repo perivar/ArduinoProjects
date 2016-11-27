@@ -4,10 +4,15 @@ boolean debug=1;   //Set to 1 for console debugging
 
 #include <RH_ASK.h>
 #include <SPI.h>   // from RH_ASK: not actually used but needed to compile
+#include <Wire.h> // Date and time functions using a DS1307 RTC connected via I2C and Wire lib
+#include "RTClib.h"
 #include <LiquidCrystal_I2C.h>
+#include <SD.h>
 
 LiquidCrystal_I2C display(0x3f, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 // Addr, En, Rw, Rs, d4, d5, d6, d7, backlighpin, polarity
+
+RTC_DS1307 rtc;
 
 RH_ASK radio;
 // RH_ASK radio(2000, 2, 4, 5); // ESP8266: do not use pin 11
@@ -23,12 +28,23 @@ struct SensorData {
 
 SensorData sensor;
 
+// On the Ethernet Shield, CS is pin 4. It's set as an output by default.
+// Note that even if it's not used as the CS pin, the hardware SS pin 
+// (10 on most Arduino boards, 53 on the Mega) must be left as an output 
+// or the SD library functions will not work. 
+const int chipSelect = 4;         // CS for SD card
+const int defaultSelectPin = 10;  // Uno R3
+
+// set up variables using the SD utility library functions:
+char filename[] = "00000000.CSV";
+File dataFile;
+
 void setup()
 {
 	if (debug==1)
 	{ 
 		Serial.begin(9600); 
-		Serial.println("Initializing ...");
+		Serial.println(F("Initializing ..."));
 	}
 
 	// Setting up LCD
@@ -38,15 +54,54 @@ void setup()
 	display.print("Reidar's");
 	display.setCursor(0, 1);
 	display.print("Vaerstasjon");
-	delay(4000);
+	delay(3000);
 	//display.noBacklight();
 
-	if (!radio.init()) {
-		Serial.println("Init failed!");
+	if (!rtc.begin()) {
+		Serial.println(F("Couldn't find RTC"));
+		while (1);
+	}
+
+	if (!rtc.isrunning()) {
+		Serial.println(F("RTC is NOT running!"));
 	} else {
-		Serial.println("Init successful.");
+		// following line sets the RTC to the date & time this sketch was compiled
+		rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+
+		// Print Now
+		DateTime now = rtc.now();      
+		display.clear();
+		display.setCursor(0, 0);
+		display.print(now.year(), DEC);
+		display.print('/');
+		display.print(now.month(), DEC);
+		display.print('/');
+		display.print(now.day(), DEC);
+		display.setCursor(0, 1);
+		display.print(now.hour(), DEC);
+		display.print(':');
+		display.print(now.minute(), DEC);
+		display.print(':');
+		display.print(now.second(), DEC);    
+		delay(2000);
+	}
+
+	if (!radio.init()) {
+		Serial.println(F("Init failed!"));
+	} else {
+		Serial.println(F("Init successful."));
 		radio.setModeRx();
 	}
+
+	Serial.println(F("Initializing SD card..."));
+	// make sure that the default chip select pin is declared OUTPUT, even if it's not used!
+	pinMode(defaultSelectPin, OUTPUT);
+
+	//if (!SD.begin(chipSelect)) {
+	//  Serial.println(F("SD initialization failed!"));
+	//}
+
+  Serial.println(F("Initialization done!"));
 }
 
 void loop()
@@ -57,49 +112,129 @@ void loop()
 	if (radio.recv(buf, &buflen)) // Non-blocking
 	{
 		memcpy(&sensor, &buf, sizeof(sensor)); 
-				
+		
 		// show data on screen
-		//display.backlight();
-		display.clear();
+		display.backlight();
+		//display.clear();
 		display.setCursor(0, 0);
-    display.print("Temp: "); 
-    display.print(sensor.dht11_t);
-    display.print(" *C");
-    
-    display.setCursor(0, 1);
+		display.print("Temp: "); 
+		display.print(sensor.dht11_t);
+		display.print(" *C");
+		
+		display.setCursor(0, 1);
 		display.print("Bat.: ");
 		display.print(sensor.battery);
 		display.print(" mV");
-    delay(3000);
-    display.clear();
-    //display.noBacklight();
+		delay(3000);
+		//display.clear();
+		display.noBacklight();
+
+		// get now
+		DateTime now = rtc.now();  
+		
+		// store to SD card
+		getFileName(filename);
+
+		dataFile = SD.open(filename, FILE_WRITE);
+
+		// if the file is available, write to it:
+		if (dataFile) {
+			Serial.print(F("Saving to: "));
+			Serial.print(filename);
+			Serial.println();
+			
+			dataFile.print(now.day(), DEC);
+			dataFile.print('/');
+			dataFile.print(now.month(), DEC);
+			dataFile.print('/');
+			dataFile.print(now.year(), DEC);
+			dataFile.print(" , ");
+			dataFile.print(now.hour(), DEC);
+			dataFile.print(':');
+			dataFile.print(now.minute(), DEC);
+			dataFile.print(" , ");  
+			dataFile.print(sensor.dht11_t);
+			dataFile.print(" , ");
+			dataFile.print(sensor.dht11_h);
+			dataFile.print(" , ");
+			dataFile.print(sensor.bmp180_t);
+			dataFile.print(" , ");
+			dataFile.print(sensor.bmp180_p);
+			dataFile.print(" , ");
+			dataFile.print(sensor.bmp180_a);
+			dataFile.print(" , ");
+			dataFile.print(sensor.battery);
+			dataFile.println();
+			dataFile.close();
+			Serial.println(F("Done writing to SD card."));
+		}
 		
 		// print data for debugging
 		if (debug==1)
 		{ 
-      // Message with a good checksum received, dump it.
-      radio.printBuffer("Received:", buf, buflen);
-      
-			Serial.print("DHT11    T:"); 
+			// Print Now    
+			Serial.print(now.year(), DEC);
+			Serial.print('/');
+			Serial.print(now.month(), DEC);
+			Serial.print('/');
+			Serial.print(now.day(), DEC);
+			Serial.print(' ');
+			Serial.print(now.hour(), DEC);
+			Serial.print(':');
+			Serial.print(now.minute(), DEC);
+			Serial.print(':');
+			Serial.print(now.second(), DEC);
+			Serial.println();
+			
+			// Message with a good checksum received, dump it.
+			radio.printBuffer("Received:", buf, buflen);
+			
+			Serial.print(F("DHT11    T:")); 
 			Serial.print(sensor.dht11_t);
-			Serial.print("*C ");
-			Serial.print("H:"); 
+			Serial.print(F("*C "));
+			Serial.print(F("H:")); 
 			Serial.print(sensor.dht11_h);
-			Serial.println("%");
+			Serial.println(F("%"));
 			
-			Serial.print("BMP180   T:");
+			Serial.print(F("BMP180   T:"));
 			Serial.print(sensor.bmp180_t);
-			Serial.print("*C ");
-			Serial.print("P:");
+			Serial.print(F("*C "));
+			Serial.print(F("P:"));
 			Serial.print(sensor.bmp180_p);
-			Serial.print("Pa ");
-			Serial.print("A:");
+			Serial.print(F("Pa "));
+			Serial.print(F("A:"));
 			Serial.print(sensor.bmp180_a);
-			Serial.println("m");
-			
-			Serial.print("Bat.:");
+			Serial.println(F("m"));
+
+			Serial.print(F("BATT     V:")); 
 			Serial.print(sensor.battery);
-			Serial.println("mV");
+			Serial.println(F(" mV"));
 		}        
 	}
 }
+
+void getFileName(char *filename) {
+	DateTime now = rtc.now(); 
+	int year = now.year(); 
+	int month = now.month(); 
+	int day = now.day();
+	filename[0] = '2';
+	filename[1] = '0';
+	filename[2] = (year-2000)/10 + '0';
+	filename[3] = year%10 + '0';
+	filename[4] = month/10 + '0';
+	filename[5] = month%10 + '0';
+	filename[6] = day/10 + '0';
+	filename[7] = day%10 + '0';
+	filename[8] = '.';
+	filename[9] = 'C';
+	filename[10] = 'S';
+	filename[11] = 'V';
+	return;
+}
+
+void getFileName2(){
+	DateTime now = rtc.now();
+	sprintf(filename, "%02d%02d%02d.csv", now.year(), now.month(), now.day());
+}
+
