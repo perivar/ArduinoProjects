@@ -1,113 +1,67 @@
-include <arduino_nano.scad>
+include <perfboard_send.scad>
+include <Batteries.scad>
+include <Generic_case_improved_revA.scad>
 
-$fn = 10;
-delta = 0.1;
+$fn = 20;
+wall = box_wt;
+height = 6;
+shiftx = 5;
+shifty = 5;
+mountingHoleRadius = 2 / 2;
 
-// perf board constants
-pb_width = 60;
-pb_depth = 40;
-pb_height = 1.6;
+// 9 v battery
+//color("red") translate([shiftx+80,shifty+50,2+wall]) rotate([90,-90,0]) 9V();
 
-pb_hole_dia = 2; 
-pb_hole_edge = 1.10;
+// the total height of the perfboard is 39 mm
+//translate([shiftx, shifty, wall+height]) perfboard_send();
 
-// pins
-pinh = 5;           // height of pin in mm.
-pind = 1;           // diameter of header pin in mm
-pinsep = 0.1 * 25.4; // separation between header pins.
-npin_x   = 20;         // number of pins. 
-npin_y   = 14;         // number of pins. 
+// -------------------
 
-pin_base_x = 0.1*25.4;  // size of square base around pins
-pin_base_z = 0.1*25.4;  // height of square base around pins
+// 9v battery wall
+margin = 0;
+color("white") translate([66,margin,0]) cube([wall,box_sy-2*margin,28]);
 
-// calculate the pin offsets according to the perfboard size
-xoff = (pb_width - npin_x*pin_base_x)/2 + pin_base_x/2;
-yoff = (pb_depth - npin_y*pin_base_x)/2 + pin_base_x/2;
+// standoffs
+translate([shiftx+pb_hole_dia/2+pb_hole_edge, shifty+pb_hole_dia/2+pb_hole_edge, wall]) standoff();
 
+translate([shiftx+pb_width-pb_hole_dia/2-pb_hole_edge,shifty+pb_hole_dia/2+pb_hole_edge,wall]) standoff();
 
+translate([shiftx+pb_hole_dia/2+pb_hole_edge,shifty+pb_depth-pb_hole_dia/2-pb_hole_edge,wall]) standoff();
 
-perfboard();
-header(1,6,16,0);    
-header(1,12,16,0);
-header(1,14,3,0);    
-header(8,4,4,0);  
+translate([shiftx+pb_width-pb_hole_dia/2-pb_hole_edge,shifty+pb_depth-pb_hole_dia/2-pb_hole_edge,wall]) standoff();
 
-translate([45,33,pb_height+pin_base_z]) rotate([0,0,180]) Arduino_Nano(0,1);
-
+// box
+difference() {
+color("white") rounded_cube_case(generate_box=true, generate_lid=true);
+    
+    union() {
+        // micro usb connection
+        translate([-delta,22,11]) cube([wall+2*delta,12,8]);
         
-module header(x = 1, y = 1, length = 3, type = 0) {
-    // plastic base        
-       /* 
-		translate([xoff-pin_base_x/2,
-						yoff-pin_base_x/2,
-						pb_height])
-			cube([npin_x*pin_base_x,pin_base_x,pin_base_z+pb_height]);
+        // BMP 180 vent holes
+        ventholes = 4;
+        ventsep = 2.5;
+        for (ventNo = [0:ventholes-1]) {        translate([28+ventsep*ventNo,-delta,15]) cube([1,wall+2*delta,10]);    
+        }
+        
+        // DHT11 vent holes
+        for (ventNo = [0:ventholes-1]) {        translate([52+ventsep*ventNo,60-wall-delta,25]) cube([1,wall+2*delta,10]);    
+        }
 
-		translate([xoff-pin_base_x/2,
-						yoff-pin_base_x/2,
-						pb_height])
-			cube([pin_base_x,npin_y*pin_base_x,pin_base_z+pb_height]);
-        */
-	
-       if (type == 0) {
-        // horisontal
-        difference() {                
-           color("black") translate([xoff-pin_base_x/2+pinsep*(x-1),yoff-pin_base_x/2+pinsep*(y-1),pb_height])
-			cube([pin_base_x*length,pin_base_x,pin_base_z]);         
-          	
-            for (pinNoX = [0:length-1]) {           translate([xoff+pinsep*(x-1)+pinsep*pinNoX,yoff+pinsep*(y-1),pb_height-delta])
-			cylinder(d=pind, h=pin_base_z+2*delta);         
-	}
-            
-            }            
-       } else {
-           // vertical
-           difference() {
-       color("black") translate([xoff-pin_base_x/2+pinsep*(x-1),yoff-pin_base_x/2+pinsep*(y-1),pb_height])
-			cube([pin_base_x,pin_base_x*length,pin_base_z]);        
-               
-          	for (pinNoY = [0:length-1]) {           translate([xoff+pinsep*(x-1),yoff+pinsep*(y-1)+pinsep*pinNoY,pb_height-delta])
-			cylinder(d=pind, h=pin_base_z+2*delta);            
-	}                         
-               } 
-       }    
+        // RF hole
+        for (ventNo = [0:ventholes-1]) {        translate([9+ventsep*ventNo,60-wall-delta,20]) cube([1,wall+2*delta,10]);    
+        }
+        
+    }
 }
 
-// perf board
-module perfboard() {
+module standoff(topRadius = mountingHoleRadius + 1, bottomRadius =  mountingHoleRadius + 2, holeRadius = mountingHoleRadius, height = height, wall = wall) {
 
+union() {
+      difference() {
+        cylinder(r1 = bottomRadius, r2 = topRadius, h = height, $fn=32);
+          cylinder(r =  holeRadius, h = height * 4, center = true, $fn=32);
+      }
+  }
     
-    difference() {
-        union() {
-        // green perf board
-        color("green") cube([pb_width, pb_depth, pb_height], false);
-            
-    }
-    
-        union() {
-     /*   
-    // perfboard holes
-    color("yellow") {    
-	for (pinNoX = [0:npin_x-1]) {
-        for (pinNoY = [0:npin_y-1]) {
-		
-            translate([xoff+pinsep*pinNoX,yoff+pinsep*pinNoY,-delta])
-			cylinder(d=pind, h=pinh+pin_base_z);
-            
-        }
-	}
-}  
-       */     
-            
-            translate([pb_hole_dia/2+pb_hole_edge,pb_hole_dia/2+pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
-
-            translate([pb_width-pb_hole_dia/2-pb_hole_edge,pb_hole_dia/2+pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
-
-            translate([pb_hole_dia/2+pb_hole_edge,pb_depth-pb_hole_dia/2-pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
-
-            translate([pb_width-pb_hole_dia/2-pb_hole_edge,pb_depth-pb_hole_dia/2-pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
-                        
-        }
-    }
 }

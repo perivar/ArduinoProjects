@@ -45,7 +45,7 @@ use <Utils\polyhole.scad>
 //  Requires openSCAD MCAD library to be installed (openSCAD 2014.03 or later)
 //  polyhole(h,d) provides improved size control on small holes
 //  cylinder center parameter defaults to false; $fn intentionally varies with size of hole
-use <Utils\teardrop.scad>    
+use <Utils\teardrops.scad>    
 //  Requires openSCAD MCAD library to be installed (openSCAD 2014.03 or later)
 //  teardrop(radius, length, angle) provides a sidewall hole more printable than round hole
 //  Angle parameter of 90 degrees gives teardrop shape; unclear when another value would be used
@@ -59,9 +59,9 @@ use <Utils\teardrop.scad>
 //////////////// PARAMETERS  ///////////////////////////////////////////////////
 // All dimensions are millimeter
 // Case parameters for tailoring  
-box_sx = 70;       // box outside size in X axis, not including mounting tabs
-box_sy = 50;       // box outside size in Y axis
-box_sz = 15;       // box outside size in Z axis, including the lid thickness
+box_sx = 90;       // box outside size in X axis, not including mounting tabs
+box_sy = 60;       // box outside size in Y axis
+box_sz = 44;       // box outside size in Z axis, including the lid thickness
 box_wt = 2.0;      // box wall thickness (keep less than box_cp_hid)
 box_bt = 2.0;      // box base or bottom thickness (should be a multiple of printed layer height)
 
@@ -163,7 +163,7 @@ tab_hole_centers = [[          -tab_sx/2 ,          tab_hoy , 0 ],
 //////////////////////////////////////////////////////////////////////////////////////
 // Top level geometry
 // Edit true or false for obtaining box and lid respectively
-rounded_cube_case(generate_box=true, generate_lid=true);
+//rounded_cube_case(generate_box=true, generate_lid=true);
 
 //----------------------------------------------------------
 module standoff( post_od , post_id , post_h , hole_depth) {
