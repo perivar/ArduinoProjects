@@ -61,7 +61,7 @@ use <Utils\teardrops.scad>
 // Case parameters for tailoring  
 box_sx = 90;       // box outside size in X axis, not including mounting tabs
 box_sy = 60;       // box outside size in Y axis
-box_sz = 44;       // box outside size in Z axis, including the lid thickness
+box_sz = 52;       // box outside size in Z axis, including the lid thickness
 box_wt = 2.0;      // box wall thickness (keep less than box_cp_hid)
 box_bt = 2.0;      // box base or bottom thickness (should be a multiple of printed layer height)
 

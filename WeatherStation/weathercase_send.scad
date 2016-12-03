@@ -13,7 +13,7 @@ mountingHoleRadius = 2 / 2;
 //color("red") translate([shiftx+80,shifty+50,2+wall]) rotate([90,-90,0]) 9V();
 
 // the total height of the perfboard is 39 mm
-//translate([shiftx, shifty, wall+height]) perfboard_send();
+translate([shiftx, shifty, wall+height]) perfboard_send();
 
 // -------------------
 
@@ -36,7 +36,7 @@ color("white") rounded_cube_case(generate_box=true, generate_lid=true);
     
     union() {
         // micro usb connection
-        translate([-delta,22,11]) cube([wall+2*delta,12,8]);
+        translate([-delta,23,20]) cube([wall+2*delta,12,8]);
         
         // BMP 180 vent holes
         ventholes = 4;
@@ -45,12 +45,14 @@ color("white") rounded_cube_case(generate_box=true, generate_lid=true);
         }
         
         // DHT11 vent holes
-        for (ventNo = [0:ventholes-1]) {        translate([52+ventsep*ventNo,60-wall-delta,25]) cube([1,wall+2*delta,10]);    
+        for (ventNo = [0:ventholes-1]) {        translate([52+ventsep*ventNo,60-wall-delta,32]) cube([1,wall+2*delta,10]);    
         }
 
         // RF hole
+        /*
         for (ventNo = [0:ventholes-1]) {        translate([9+ventsep*ventNo,60-wall-delta,20]) cube([1,wall+2*delta,10]);    
         }
+        */
         
     }
 }

@@ -51,15 +51,15 @@ icsp_xoff = 0.06 * 25.4;  // my guess
 icsp_nxpin = 2;           // number of pins in x direction
 icsp_nypin = 3;           // number of pins in y direction.
 icsp_pinsep = 0.1 * 25.4; // pin separation
-icsp_pinh = 10;
+icsp_pinh = 10;           // (height includes ardunio board thickness + black header + pin
 icsp_pind  = 1;			  // icsp pin diameter
 icsp_yoff = (y - icsp_pinsep * (icsp_nypin-1)) / 2;
 
 pin_base_x = 0.1*25.4;  // size of square base around pins
 pin_base_z = 0.1*25.4;  // height of square base around pins
 
-usb_x = 5; 
-usb_y = 7.5;
+usb_x = 5.5; 
+usb_y = 8.0;
 usb_z = 3;
 usb_off = 2;  // How much it sticks out from the board in x direction.
 
@@ -70,18 +70,19 @@ tol = 0.1;						// general tolerance to oversize things a bit.
 /* Main module to draw the complete arduino nano from components */
 module Arduino_Nano(headers=1, holes=0) {
 
-	if (headers==1)
+	if (headers==1) {
 		union() {
 			board(holes);
 			headers();
 		}
-	else
+	} else {
 		difference() {
 			union() {
 				board(holes);
 			}
 			headers();
 		}
+    }
 }
 
 
@@ -92,15 +93,14 @@ module usb() {
 }
 
 module icsp() {
-	// Pins
+	// Pins (height includes ardunio board thickness + black header + pin
 	for (xpinNo = [0:icsp_nxpin-1]) {
 		for (ypinNo = [0:icsp_nypin-1]) {
-			translate([icsp_xoff+icsp_pinsep*xpinNo,
-							icsp_yoff+icsp_pinsep*ypinNo,
-							-tol])
+			translate([icsp_xoff+icsp_pinsep*xpinNo, icsp_yoff+icsp_pinsep*ypinNo,-tol])
 				cylinder(r=icsp_pind/2, h=icsp_pinh+tol);
 		}
 	}
+    
 	// Plastic Base
 	color([0,0,0])
 		translate([icsp_xoff-pin_base_x/2,
@@ -114,18 +114,25 @@ module icsp() {
 module headers() {
 	// Pins
 	for (pinNo = [0:head_npin-1]) {
-		translate([head_xoff+head_pinsep*pinNo,head_yoff,-1*head_pinh])
+		// top row
+        translate([head_xoff+head_pinsep*pinNo,head_yoff,-1*head_pinh])
 			cylinder(r=head_pind/2, h=head_pinh+th+tol);
-		translate([head_xoff+head_pinsep*pinNo,y-head_yoff,-1*head_pinh])
+		
+        // bottom row
+        translate([head_xoff+head_pinsep*pinNo,y-head_yoff,-1*head_pinh])
 			cylinder(r=head_pind/2, h=head_pinh+th+tol);
 	}
-	// Plastic Base
+    
+	// Black Plastic Base
+    // top row
 	color([0,0,0])
 		translate([head_xoff-pin_base_x/2,
 						head_yoff-pin_base_x/2,
 						-1*pin_base_z+tol])
 			cube([head_npin*pin_base_x,pin_base_x,pin_base_z+tol]);
-	color([0,0,0])
+	
+    // bottom row
+    color([0,0,0])
 		translate([head_xoff-pin_base_x/2,
 						y-head_yoff-pin_base_x/2,
 						-1*pin_base_z+tol])
@@ -145,7 +152,7 @@ module holes() {
 }
 
 module board(holes = 0) {
-	if (holes==0)
+	if (holes==0) {
 		union() {
 			// board itself
 			color([0.1,0.1,0.5]) cube([x,y,th]);
@@ -153,7 +160,7 @@ module board(holes = 0) {
 			usb();
 			holes();
 		}
-	else 
+	} else { 
 		difference() {
 			// board itself
 			union() {
@@ -163,4 +170,5 @@ module board(holes = 0) {
 			}
 			holes();
 		}
+    }
 }
