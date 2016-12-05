@@ -42,7 +42,6 @@ SdVolume volume;
 SdFile root;
 
 // Custom symbols
-// define a custom symbol (clock)
 // https://omerk.github.io/lcdchargen/
 static const byte DEGREES_CHAR = 1;
 byte degrees_glyph[8] = { 0x00, 0x07, 0x05, 0x07, 0x00 };

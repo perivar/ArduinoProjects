@@ -1,6 +1,6 @@
-use <Utils/teardrops.scad>
-use <Utils/roundCornersCube.scad>
-use <Utils/polyhole.scad>
+use </Utils/teardrops.scad>
+use </Utils/roundCornersCube.scad>
+use </Utils/polyhole.scad>
 
 module standoff(outer_diam, inner_diam, height, hole_depth) {
 	/* Generates a standoff for mounting something e.g. a PCB */
@@ -23,11 +23,10 @@ module cylindrical_lip(outer_diameter, height, wall_thickness) {
 }
 
 module rounded_cube_case (generate_box = true, generate_lid = false) 
-{
-	//Case details (these are *outer* diameters of the case 
-	sx = 63; 			//X dimension
-	sy = 50;			//Y dimension
-	sz = 26;				//Z dimension
+{ 
+	sx = 95; 			//X dimension
+	sy = 39;			//Y dimension
+	sz = 30;				//Z dimension
 	r = 2.5;				//The radius of the curves of the box walls.
 	wall_thickness = 1.5;//Thickness of the walls of the box (and lid)
 
@@ -36,7 +35,7 @@ module rounded_cube_case (generate_box = true, generate_lid = false)
 	screw_hole_depth = 20;	//Depth of the screw hole
 
 	screw_head_dia = 4.5;	//Diameter of the screw head (for the recess)
-	screw_head_depth = 1.0;	//Depth of the recess to hold the screw head
+	screw_head_depth = 0;	//Depth of the recess to hold the screw head
 
 	screw_hole_centres = [ [wall_thickness*2, wall_thickness*2,0 ], 
 					[sx - ( wall_thickness*2), wall_thickness*2, 0],
@@ -81,7 +80,7 @@ module rounded_cube_case (generate_box = true, generate_lid = false)
 						to pass through the lid without biting into it */
 		
 	 				translate([0,0,-0.5]) translate(i) polyhole(wall_thickness + 1, screw_hole_dia * 1.25);  //The screw hole.
-					translate([0, 0, -1]) translate(i) polyhole(screw_head_depth + 1, screw_head_dia); //The countersink
+					//translate([0, 0, -1]) translate(i) polyhole(screw_head_depth + 1, screw_head_dia); //The countersink
 				}
 			}
 	}
@@ -112,5 +111,52 @@ module rounded_cube_case (generate_box = true, generate_lid = false)
 
 }
 
-//rounded_cube_case(true, true);
+//End of Generic Case code
 
+standoff_height = 8;
+pcb_thickness = 2;
+
+//Connector hole sizes
+power_conn_radius = 5;
+rf_conn_radius = 5;
+audio_conn_radius = 6;
+
+//Positioning offsets measured from the upper surface of lower left corner of the PCB, when board orientated with power conn in bottom left.
+//PCB mounting holes
+hole_1_x_offset = 4;
+hole_1_y_offset = 5;
+
+hole_2_x_offset = 75;
+hole_2_y_offset = 5;
+
+hole_3_x_offset = 75;
+hole_3_y_offset = 28;
+
+power_conn_x_offset = 11.5;
+power_conn_z_offset = 8;
+
+rf_conn_x_offset = 43;
+rf_conn_z_offset = 7.5;
+
+audio_conn_x_offset = 7.5;
+audio_conn_z_offset = 4;
+
+pcb_corner_x = 8;
+pcb_corner_y = 3.5;
+
+difference() {
+	union()  { 
+		rounded_cube_case(true, false);
+		//The three standoffs to support the PCB
+		translate([pcb_corner_x + hole_1_x_offset, pcb_corner_y + hole_1_y_offset, 1.49]) standoff(6, 1.75, standoff_height, 8); 
+		translate([pcb_corner_x + hole_2_x_offset, pcb_corner_y + hole_2_y_offset, 1.49]) standoff(6, 1.75, standoff_height, 8);
+		translate([pcb_corner_x + hole_3_x_offset, pcb_corner_y + hole_3_y_offset, 1.49]) standoff(6, 1.75, standoff_height, 8);
+	}
+	//Cut the holes for the sockets on the board.
+	#translate([pcb_corner_x + power_conn_x_offset, 0, standoff_height + pcb_thickness + power_conn_z_offset]) 
+		rotate([90,0,0]) teardrop(10, power_conn_radius, true, false); //power conn
+	#translate([pcb_corner_x + rf_conn_x_offset,0,standoff_height + pcb_thickness + rf_conn_z_offset]) 
+		rotate([90,0,0]) teardrop(10, rf_conn_radius, true, false); //rf in
+	#translate([pcb_corner_x + audio_conn_x_offset, 39, standoff_height + pcb_thickness + audio_conn_z_offset]) 
+		rotate([90,0,0]) teardrop(10, audio_conn_radius, true, false); //audio out
+} 
