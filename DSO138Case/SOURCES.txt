@@ -1,0 +1,3 @@
+Sources for  Case for DSO138 - Remixed to fit new PCB mounting hole pattern
+
+Case for DSO138 digital oscilloscope (http://www.thingiverse.com/thing:779159)
