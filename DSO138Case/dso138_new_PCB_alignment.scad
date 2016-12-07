@@ -12,19 +12,20 @@
 //  Also increased spacing around switch holes and decreased switch size for more play
 //  Updated by Per Ivar Nerseth Dec 2016 to make more space for the PCB (too narrow)
 
-part = "all"; // [ demo, all, top, bottom, button, button2, slider, slider2 ]
+part = "buttons"; // [ demo, all, top, bottom, button, button2, slider, slider2, buttons ]
 with_batt = true; // [ true, false ]
 
 // real pcb size = 4.6 x 3 inch (thickness: 1.7 mm)
+// original: pcb = [4.6*25.4+0.2, 3*25.4+0.2, 1.1];
 realpcb = [4.6*25.4, 3*25.4, 1.7];
-echo(str("Real pcb size: ", realpcb[0], " x ", realpcb[1], " x ", realpcb[2] + " mm"));
+echo(str("Real pcb size: ", realpcb[0], " x ", realpcb[1], " x ", realpcb[2], " mm"));
 
 // added margin around the pcb for the box
 // PIN: increased clearance from +0.2 to 0.8
-pcb_clearance = 1;//0.8; // added by PIN
+pcb_clearance = 2; // added by PIN
 
 pcb = [realpcb[0]+pcb_clearance, realpcb[1]+pcb_clearance, realpcb[2]];
-echo(str("PCB with clearance size: ", pcb[0], " x ", pcb[1], " x ", pcb[2] + " mm"));
+echo(str("PCB with clearance size: ", pcb[0], " x ", pcb[1], " x ", pcb[2], " mm"));
 
 // pcb mounts
 // holes are 3.3 mm in dia
@@ -40,13 +41,13 @@ batt = [26.0, 54.0, 17.0]; // 9 V battery with contact
 lcdwinsize = [50.0+2, 37.0+2];
 lcdpos = [realpcb[0]/2-lcdwinsize[0]/2-27.5, 17.5-(realpcb[1]/2-lcdwinsize[1]/2)]; // from lower right corner
 lcdpcb = [53+2*10, 43+2*7]; // assume symmetrical, with margin
-lcdframeh = 1*2.3; // frame height
+lcdframeh = 2.3; // frame height
 
 ledpos = [realpcb[0]/2-29.5, 8.0-realpcb[1]/2]; // from lower right corner
-leddia = 1*3.2;
+leddia = 3.2;
 
 pcb2bot = 4.0; // room from bottom pcb to bottom cover
-pcb2lcd = 1*14.0; // room from top pcb to top LCD surface
+pcb2lcd = 14.0; // room from top pcb to top LCD surface
 
 buttonclearance = 0.2; //amount to subtract from button diameter for hole clearance Added by CL
 buttoninsertheight = 11; //Added by CL - switched height for actuators to a separate variable to isolate from changes to main top case button cutout heights - actual height is this plus the radius of button because of sphere ontop
@@ -61,37 +62,42 @@ slider1pos = [12.9-realpcb[0]/2, 18.0-realpcb[1]/2]; // from lower left corner /
 sliderdy = (42.4-7.0)/2;
 sliderdx = (9.6-5.4)/2 + 0.5; // add tolerance 
 sliderdia = 6.0;
-sliderheight = 1*4.5; // above PCB
-slidersq = 2.0+0.2; // size of square slider button (with some extra tolerance) //Edited by CL from +.2 to +.1
+sliderheight = 4.5; // above PCB
+slidersq = 2.0 + 0.2; // size of square slider button (with some extra tolerance) // Edited by PIN from +.2 to +.3 ?
 
 trimmer1pos = [23.5-realpcb[0]/2, 44.7-realpcb[1]/2]; // from lower left corner
 trimmerdy = 53.3-44.7;
 trimmerdia = 4; //Edited by CL was 3.1
-trimmerheight = 1*6.6; // above PCB //Edited by CL was 4.6
+trimmerheight = 6.6; // above PCB //Edited by CL was 4.6
 
 bncpos = 15.8-realpcb[0]/2; // from upper left corner
 bncdia = 9.6+1.0; // 1.0 is extra margin
 
 testpos = realpcb[0]/2-39.3; // from upper right corner
-testpdx = 1*5.5;
-testpdy = 1*5.0;
+testpdx = 5.5;
+testpdy = 5; 
 
 powerpos = realpcb[0]/2-20.9; // from upper right corner
-powerdx = 1*9.0;
-powerdz = 1*11.0;
+powerdx = 9.0;
+powerdz = 11.0;
 
 usbpos = realpcb[0]/2-57.5; // from lower right corner // Added by CL
-usbdx = 1*9;
-usbdz = 1*4.2;
+usbdx = 9;
+usbdz = 4.2;
 
 
 switchneck = 6.0; // neck of toggle switch
 switchbody = 15.0; // height of switch body, including contacts
 
-wall = 1.4;
+// wall size
+wall = 1.4; // PIN: increased from 1.2
 caser = wall;
-twall = 1.2; // wall size of top - gets a bit flimsy if too thin
-bwall = 2.0; // wall size of bottom - gets a bit flimsy if too thin
+
+// wall size of top - gets a bit flimsy if too thin
+twall = 1.4; // PIN: increased from 1.2
+
+// wall size of bottom - gets a bit flimsy if too thin
+bwall = 2.0; 
 
 tol = 0.25;
 d = 0.01;
@@ -118,7 +124,6 @@ module cr2_cube(x, y, z, r1, r2) {
 		for (dx=[-1,1]) for (dy=[-1,1]) translate([dx*(x/2-r1), dy*(y/2-r1), 0]) cylinder(r1=r1, r2=r2, h=z, $fn=20);
 	}
 }
-
 
 module top() {
 	sidewalls();
@@ -236,15 +241,15 @@ module sidewalls() {
 			}
 
 			// hole for test point
-			translate([testpos, pcb[1]/2-testpdy, -pcb2lcd+pcb2lcd/2]) rotate([-90,0,0]) c_cube(testpdx, pcb2lcd, testpdy+tol+wall+d);
-
+			translate([testpos, pcb[1]/2, -pcb2lcd+pcb2lcd/2]) rotate([-90,0,0]) c_cube(testpdx, pcb2lcd, tol+wall+d);
 
 			// hole for USB connector
 			translate([usbpos, -pcb[1]/2-wall-2*tol, -pcb2lcd+usbdz/2]) rotate([-90,0,0]) c_cube(usbdx+2*tol, usbdz+2*tol, wall+d+2*tol);
 
 			// hole for power plug
 			translate([powerpos, pcb[1]/2, -pcb2lcd+powerdz/2]) rotate([-90,0,0]) c_cube(powerdx+2*tol, powerdz+2*tol, tol+wall+d);
-			// extra room for plug when installing pcb
+			
+            // extra room for plug when installing pcb
 			translate([powerpos, pcb[1]/2, -pcb2lcd+powerdz/2-pcb2bot-pcb[2]]) rotate([-90,0,0]) c_cube(powerdx+2*tol, powerdz+2*tol, tol+wall-0.45);
 
 			if (with_batt) {
@@ -259,8 +264,8 @@ module sidewalls() {
 
 	// enclosure for test point
 	difference() {
-		translate([testpos, pcb[1]/2-testpdy-wall, -pcb2lcd+pcb2lcd/2+tol]) rotate([-90,0,0]) c_cube(testpdx+2*wall, pcb2lcd, wall+testpdy+tol);
-		translate([testpos, pcb[1]/2-testpdy, -pcb2lcd+pcb2lcd/2]) rotate([-90,0,0]) c_cube(testpdx, pcb2lcd, testpdy+tol+wall+d);
+		translate([testpos, realpcb[1]/2-testpdy-wall, -pcb2lcd+pcb2lcd/2+tol]) rotate([-90,0,0]) c_cube(testpdx+2*wall, pcb2lcd, pcb_clearance/2+wall+testpdy+tol);
+		translate([testpos, realpcb[1]/2-testpdy, -pcb2lcd+pcb2lcd/2]) rotate([-90,0,0]) c_cube(testpdx, pcb2lcd, pcb_clearance/2+wall+testpdy+tol+d);
 	}
 
 	if (with_batt) {
@@ -338,10 +343,6 @@ module switchwall() {
 module switchhole() {
 	translate([pcb[0]/2+batt[0]/2+2*tol+wall, pcb[1]/2, -(pcb2bot+pcb[2]+pcb2lcd)+batt[2]/2]) {
 		rotate([-90, 0, 0]) cylinder(r=switchneck/2+tol, h=tol+wall+d+1, $fn=20);
-		//hull () {
-		//	translate([5.0, 0, 0]) rotate([-90, 0, 0]) cylinder(r=buttondia/2+tol, h=tol+wall+d+1, $fn=20);
-		//	translate([-5.0, 0, 0]) rotate([-90, 0, 0]) cylinder(r=buttondia/2+tol, h=tol+wall+d+1, $fn=20);
-		//}
 	}
 }
 
@@ -373,7 +374,6 @@ module tswitch() {
 		for (dx = [-5.08, 0, 5.08]) rotate([90, 0, 0]) translate([dx, 0, 0]) cylinder(r=1.1, h=switchbody);
 	}
 }
-
 
 module button() {
 	cylinder(r = buttondia/2+tol+wall, h=wall, $fn=60);
@@ -436,12 +436,11 @@ module slider2() {
 	}
 }
 
+// output parts
 if (part=="demo") top();
 if (part=="top") rotate([180, 0, 0]) top();
 
 if (part=="demo" || part=="bottom") bottom();
-
-if (part=="demo" && with_batt || part=="lid") lid();
 
 if (part=="demo") color("green") {
 	translate([-pcb[0]/2, -pcb[1]/2, -pcb2lcd-pcb[2]]) cube(pcb); 
@@ -449,9 +448,22 @@ if (part=="demo") color("green") {
 	if (with_batt) tswitch();
 }
 
-if (part=="button") button(); // three of these
+// three of these
+if (part=="button") { 
+    for (i = [0, 20, 40]) {
+        translate([i,0,0]) button();
+    }
+}
+
 if (part=="button2") button2();
-if (part=="slider") slider(); // two of these
+    
+// two of these
+if (part=="slider") {
+    for (i = [0, 30]) {
+        translate([i,0,0]) slider();
+    }
+} 
+    
 if (part=="slider2") slider2();
 
 if (part=="demo" || part=="buttons") color("red") { 
