@@ -50,20 +50,20 @@ pcb2bot = 4.0; // room from bottom pcb to bottom cover
 pcb2lcd = 14.0; // room from top pcb to top LCD surface
 
 buttonclearance = 0.2; //amount to subtract from button diameter for hole clearance Added by CL
-buttoninsertheight = 11; //Added by CL - switched height for actuators to a separate variable to isolate from changes to main top case button cutout heights - actual height is this plus the radius of button because of sphere ontop
+buttoninsertheight = 12; //Added by CL - switched height for actuators to a separate variable to isolate from changes to main top case button cutout heights - actual height is this plus the radius of button because of sphere ontop
+    // PIN: was 11, added more
 
 buttonrpos = [realpcb[0]/2-20.0, 5.0-realpcb[1]/2]; // from lower right corner, reset switch
 button1pos = [realpcb[0]/2-9.2, 18.0-realpcb[1]/2]; // from lower right corner, other switches
 buttondy = 38.0/3;
-buttondia = 6.0;
-buttonheight = 6+0.8; // above PCB, plus some extra tolerance //Edited by CL was 4.9
+buttondia = 5.0; // PIN: made smaller, was 6.0
 
 slider1pos = [12.9-realpcb[0]/2, 18.0-realpcb[1]/2]; // from lower left corner //Edited CL first number was 13.5
 sliderdy = (42.4-7.0)/2;
 sliderdx = (9.6-5.4)/2 + 0.5; // add tolerance 
-sliderdia = 6.0;
+sliderdia = 5.0; // PIN: made smaller, was 6.0
 sliderheight = 4.5; // above PCB
-slidersq = 2.0 + 0.2; // size of square slider button (with some extra tolerance) // Edited by PIN from +.2 to +.3 ?
+slidersq = 2.0 + 1.0; // size of square slider button (with some extra tolerance) // Edited by PIN from +.2 to +.3 ?
 
 trimmer1pos = [23.5-realpcb[0]/2, 44.7-realpcb[1]/2]; // from lower left corner
 trimmerdy = 53.3-44.7;
@@ -269,8 +269,8 @@ module sidewalls() {
 	}
 
 	if (with_batt) {
-		switchwall(); // wall for switch
-		switchguard(); // protection
+		//switchwall(); // wall for switch
+		//switchguard(); // protection
 	}
 }
 
@@ -449,24 +449,32 @@ if (part=="demo") color("green") {
 }
 
 // three of these
-if (part=="button") { 
+if (part=="button" || part=="buttons") { 
     for (i = [0, 20, 40]) {
-        translate([i,0,0]) button();
+        translate([i,30,0]) button();
     }
 }
 
-if (part=="button2") button2();
+// one of these
+if (part=="button2" || part=="buttons") {
+    button2();
+}
     
 // two of these
-if (part=="slider") {
+if (part=="slider" || part=="buttons") {
     for (i = [0, 30]) {
-        translate([i,0,0]) slider();
+        translate([i,50,0]) slider();
     }
 } 
-    
-if (part=="slider2") slider2();
 
-if (part=="demo" || part=="buttons") color("red") { 
+// one of these    
+if (part=="slider2" || part=="buttons") {
+    translate([30,10,0]) slider2();
+}
+    
+
+
+if (part=="demo") color("red") { 
 	translate ([button1pos[0], button1pos[1]+0*buttondy, -(pcb2lcd-buttonheight-tol)]) button(); // three of these
 	translate ([button1pos[0], button1pos[1]+3*buttondy, -(pcb2lcd-buttonheight-tol)]) button();
 	translate ([buttonrpos[0], buttonrpos[1], -(pcb2lcd-buttonheight-tol)]) button(); 
