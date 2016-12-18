@@ -323,7 +323,7 @@ module rounded_cube_case (generate_box, generate_lid) {
       
     lid_ex_side = 4; // PIN: add around the lid to make it watertight
     lid_ex_depth = rubber_thickness;
-    translate([ 0, y_offset, 0]) { 
+    translate([ 0, y_offset, lid_ex_depth/2]) { 
       difference() {
         // create the base solids for the lid
         union() {

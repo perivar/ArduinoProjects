@@ -12,18 +12,9 @@ shiftx = 5;
 shifty = 11;
 mountingHoleRadius = 2 / 2;
 
-// 9 v battery
-//color("red") translate([shiftx+80,shifty+44,2+wall]) rotate([90,-90,0]) 9V();
-
-// the total height of the perfboard is 39 mm
-//translate([shiftx, shifty, wall+height]) perfboard_send();
+parts = "all"; // all | box | lid | demo
 
 // -------------------
-
-// 9v battery wall
-margin = 0;
-color("white") translate([66,margin,0]) cube([wall,box_sy-2*margin,28]);
-
 module perfboard_support() {
 
     // perfboard standoffs
@@ -65,50 +56,6 @@ module perfboard_support() {
                         
         }       
     }
-}
-
-module c_cube(x, y, z) {
-	translate([-x/2, -y/2, 0]) cube([x, y, z]);
-}
-
-// box
-difference() {
-	union() {
-		color("white") rounded_cube_case(true,true);
-		
-        color("white") perfboard_support();
-        
-        translate([16,2,30]) rotate([180,0,0]) water_protector();
-
-        translate([40,61,27]) water_protector();
-
-	}
-	
-	union() {
-		// micro usb connection
-		translate([-delta,shifty+18,20]) cube([wall+2*delta,12,8]);
-		
-		// BMP 180 vent holes
-		ventholes = 4;
-		ventsep = 2.5;
-		for (ventNo = [0:ventholes-1]) {        translate([28+ventsep*ventNo,-wall/2,15]) cube([1,2*wall,10]);    
-		}
-		
-		// DHT11 vent holes
-		for (ventNo = [0:ventholes-1]) {        translate([box_sz+ventsep*ventNo,box_sy-wall-wall/2,32]) cube([1,2*wall,10]);    
-		}
-
-		// RF hole
-		/*
-		for (ventNo = [0:ventholes-1]) {        translate([9+ventsep*ventNo,60-wall-delta,20]) cube([1,wall+2*delta,10]);    
-		}
-		*/
-	
-       // the standoff walls are too long
-        // cut where the battery are:
-        translate([66+wall,5,wall-tol]) cube([10, pb_width-10, 20]);
-        
-	}
 }
 
 module perfboard_standoff(topRadius = mountingHoleRadius + 1, bottomRadius =  mountingHoleRadius + 2, holeRadius = mountingHoleRadius, height = height+tol) {
@@ -164,3 +111,73 @@ module water_protector_old() {
         translate([0,-wall_w+wall,roof_h-wall_d]) rcube([wall_h,wall_w,wall_d], radius=rounded_rad);
     
 }
+
+
+module c_cube(x, y, z) {
+	translate([-x/2, -y/2, 0]) cube([x, y, z]);
+}
+
+
+// parts
+if (parts == "demo") {
+// 9 v battery
+color("red") translate([shiftx+80,shifty+44,2+wall]) rotate([90,-90,0]) 9V();
+
+// the total height of the perfboard is 39 mm
+translate([shiftx, shifty, wall+height]) perfboard_send();
+}
+
+if (parts == "all" || parts == "demo" || parts == "box") {
+    // 9v battery wall
+    margin = 0;
+    color("white") translate([66,margin,0]) cube([wall,box_sy-2*margin,28]);
+}
+
+// box
+difference() {
+	union() {
+        if (parts == "all" || parts == "demo") {
+            color("white") rounded_cube_case(true,true);
+		} else if (parts == "box") {
+            color("white") rounded_cube_case(true,false);
+        } else if (parts == "lid") {
+            color("white") rounded_cube_case(false,true);
+        }
+        
+        if (parts == "all" || parts == "box" || parts == "demo") {
+            color("white") perfboard_support();
+            
+            translate([16,2,30]) rotate([180,0,0]) water_protector();
+
+            translate([40,61,27]) water_protector();
+        }
+	}
+	
+    if (parts == "all" || parts == "box" || parts == "demo") {
+        union() {
+            // micro usb connection
+            translate([-delta,shifty+18,20]) cube([wall+2*delta,12,8]);
+            
+            // BMP 180 vent holes
+            ventholes = 4;
+            ventsep = 2.5;
+            for (ventNo = [0:ventholes-1]) {        translate([28+ventsep*ventNo,-wall/2,15]) cube([1,2*wall,10]);    
+            }
+            
+            // DHT11 vent holes
+            for (ventNo = [0:ventholes-1]) {        translate([box_sz+ventsep*ventNo,box_sy-wall-wall/2,32]) cube([1,2*wall,10]);    
+            }
+
+            // RF hole
+            /*
+            for (ventNo = [0:ventholes-1]) {        translate([9+ventsep*ventNo,60-wall-delta,20]) cube([1,wall+2*delta,10]);    
+            }
+            */
+        
+           // the standoff walls are too long
+            // cut where the battery are:
+            translate([66+wall,5,wall-tol]) cube([10, pb_width-10, 20]);
+        }
+    }
+}
+
