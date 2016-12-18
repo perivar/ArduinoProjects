@@ -6,16 +6,17 @@ include <Utils\roundedcube.scad>
 $fn = 20;
 
 wall = box_wt;
+tol = 0.25;; // small addition
 height = 6;
 shiftx = 5;
 shifty = 11;
 mountingHoleRadius = 2 / 2;
 
 // 9 v battery
-color("red") translate([shiftx+80,shifty+44,2+wall]) rotate([90,-90,0]) 9V();
+//color("red") translate([shiftx+80,shifty+44,2+wall]) rotate([90,-90,0]) 9V();
 
 // the total height of the perfboard is 39 mm
-translate([shiftx, shifty, wall+height]) perfboard_send();
+//translate([shiftx, shifty, wall+height]) perfboard_send();
 
 // -------------------
 
@@ -23,20 +24,60 @@ translate([shiftx, shifty, wall+height]) perfboard_send();
 margin = 0;
 color("white") translate([66,margin,0]) cube([wall,box_sy-2*margin,28]);
 
-// perfboard standoffs
-translate([shiftx+pb_hole_dia/2+pb_hole_edge, shifty+pb_hole_dia/2+pb_hole_edge, wall]) perfboard_standoff();
+module perfboard_support() {
 
-translate([shiftx+pb_width-pb_hole_dia/2-pb_hole_edge,shifty+pb_hole_dia/2+pb_hole_edge,wall]) perfboard_standoff();
+    // perfboard standoffs
+    topRadius = mountingHoleRadius + 1;
+    bottomRadius =  mountingHoleRadius + 2;
+    holeRadius = mountingHoleRadius;
+    
+    // position of the holes in the pcb
+    pcbmntdx = pb_hole_dia/2+pb_hole_edge;
+    pcbmntdy = pb_hole_dia/2+pb_hole_edge;
+    
+    // position within box
+    translate([pb_width/2+shiftx,pb_depth/2+shifty,0])
 
-translate([shiftx+pb_hole_dia/2+pb_hole_edge,shifty+pb_depth-pb_hole_dia/2-pb_hole_edge,wall]) perfboard_standoff();
+    difference() {
+    
+        union() {
+    // standoffs
+	for (dx=[pcbmntdx, -pcbmntdx]) 
+        for (dy=[pcbmntdy, -pcbmntdy]) {
+				translate([sign(dx)*pb_width/2-sign(dx)*pcbmntdx, sign(dy)*pb_depth/2-sign(dy)*pcbmntdy, wall-tol]) 
+            cylinder(r1 = bottomRadius, r2 = topRadius, h = height+tol, $fn=20);
+            
+            // strengthening bars
+            translate([sign(dx)*pb_width/2-sign(dx)*pcbmntdx, sign(dy)*(pb_depth/2+shifty-7.5), wall-tol])
+            c_cube(wall, 15-tol, height+tol);             
 
-translate([shiftx+pb_width-pb_hole_dia/2-pb_hole_edge,shifty+pb_depth-pb_hole_dia/2-pb_hole_edge,wall]) perfboard_standoff();
+    translate([sign(dx)*pb_width/2+sign(dx)*pcbmntdx, sign(dy)*(pb_depth/2)-sign(dy)*pcbmntdy, wall-tol])
+            c_cube(5.5, wall, height+tol);             
+        }
+    }
+    
+    // screw holes in the standoffs
+    // standoffs
+	for (dx=[pcbmntdx, -pcbmntdx]) 
+        for (dy=[pcbmntdy, -pcbmntdy]) {
+				translate([sign(dx)*pb_width/2-sign(dx)*pcbmntdx, sign(dy)*pb_depth/2-sign(dy)*pcbmntdy, wall-tol]) 
+            cylinder(r=(pb_hole_dia-tol)/2, h=height+2*tol, $fn=20);
+                        
+        }       
+    }
+}
+
+module c_cube(x, y, z) {
+	translate([-x/2, -y/2, 0]) cube([x, y, z]);
+}
 
 // box
 difference() {
 	union() {
 		color("white") rounded_cube_case(true,true);
 		
+        color("white") perfboard_support();
+        
         translate([16,2,30]) rotate([180,0,0]) water_protector();
 
         translate([40,61,27]) water_protector();
@@ -62,16 +103,20 @@ difference() {
 		for (ventNo = [0:ventholes-1]) {        translate([9+ventsep*ventNo,60-wall-delta,20]) cube([1,wall+2*delta,10]);    
 		}
 		*/
-		
+	
+       // the standoff walls are too long
+        // cut where the battery are:
+        translate([66+wall,5,wall-tol]) cube([10, pb_width-10, 20]);
+        
 	}
 }
 
-module perfboard_standoff(topRadius = mountingHoleRadius + 1, bottomRadius =  mountingHoleRadius + 2, holeRadius = mountingHoleRadius, height = height, wall = wall) {
+module perfboard_standoff(topRadius = mountingHoleRadius + 1, bottomRadius =  mountingHoleRadius + 2, holeRadius = mountingHoleRadius, height = height+tol) {
 
 	union() {
 		difference() {
-			cylinder(r1 = bottomRadius, r2 = topRadius, h = height, $fn=32);
-			cylinder(r =  holeRadius, h = height * 4, center = true, $fn=32);
+			cylinder(r1 = bottomRadius, r2 = topRadius, h = height, $fn=20);
+			cylinder(r =  holeRadius, h = height * 4, center = true, $fn=20);
 		}
 	}	
 }

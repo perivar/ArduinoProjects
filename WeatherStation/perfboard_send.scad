@@ -143,16 +143,25 @@ module perfboard() {
         }
 	}
 }  
-       */     
-            
-            translate([pb_hole_dia/2+pb_hole_edge,pb_hole_dia/2+pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
+                       translate([pb_hole_dia/2+pb_hole_edge,pb_hole_dia/2+pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
 
             translate([pb_width-pb_hole_dia/2-pb_hole_edge,pb_hole_dia/2+pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
 
             translate([pb_hole_dia/2+pb_hole_edge,pb_depth-pb_hole_dia/2-pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
 
             translate([pb_width-pb_hole_dia/2-pb_hole_edge,pb_depth-pb_hole_dia/2-pb_hole_edge,-delta]) cylinder(pb_height+2*delta,d=pb_hole_dia);
-                        
+             
+       */     
+     
+	for (dx=[pb_hole_dia/2+pb_hole_edge, pb_width-pb_hole_dia/2-pb_hole_edge]) 
+        for (dy=[pb_hole_dia/2+pb_hole_edge, pb_depth-pb_hole_dia/2-pb_hole_edge]) {
+				translate([dx, dy, -delta]) cylinder(pb_height+2*delta,d=pb_hole_dia, $fn=20);
+            }
+
+
         }
     }
 }
+
+
+//perfboard_send();
