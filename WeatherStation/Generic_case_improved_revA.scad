@@ -69,7 +69,7 @@ box_bt = 2.0;      // box base or bottom thickness (should be a multiple of prin
 lid_sz = 2.0;      // lid size in Z axis or lid thickness (should be a multiple of printed layer height)
 lip_h = 1.60;      // lid lip height (should be a multiple of layer height)
 fit_tol = 0.40;    // fit tolerance or clearance between box and lid
-rubber_thickness = 1.75; // PIN: grove in the lid to add rubber to make the box water resistant
+rubber_thickness = 2.0; // PIN: grove in the lid to add rubber to make the box water resistant. Reallyt 1.75 mm
 
 // Mounting tab parameters for tailoring
 tab_use = true;     // true or false for mounting tab on x-axis yes/no
@@ -322,7 +322,7 @@ module rounded_cube_case (generate_box, generate_lid) {
   if ( generate_lid == true ) {        // we need to create the lid part
       
     lid_ex_side = 4; // PIN: add around the lid to make it watertight
-    lid_ex_depth = rubber_thickness;
+    lid_ex_depth = rubber_thickness/2;
     translate([ 0, y_offset, lid_ex_depth/2]) { 
       difference() {
         // create the base solids for the lid
@@ -363,9 +363,9 @@ module rounded_cube_case (generate_box, generate_lid) {
 
         for (i = lid_hole_centers) {               // for each corner in the lid
           // remove the material for the corner screw hole 
-          translate([ 0, 0, MSA ])                // shift Z to ensure complete removal of hole
+          translate([ 0, 0, MSA - lid_ex_depth ])                // shift Z to ensure complete removal of hole
             translate(i) 
-              polyhole( lid_sz + MDA + lid_ex_depth, lid_hid );   // height is +MDA to ensure complete removal
+              polyhole( lid_sz + MDA + 2*lid_ex_depth, lid_hid);   // height is +MDA to ensure complete removal
           if ( lid_rd > 0 ) {                      // we need to countersink the screw head
             // remove the material for the screw head recess 
             translate([ 0, 0, -MSA ])              // -MSA to offset oversize hole being removed
@@ -378,10 +378,10 @@ module rounded_cube_case (generate_box, generate_lid) {
         // Sample square hole centered in lid - uncomment and tailor as desired
 
           // Remove a grove in lid, to make it water-tight
-    translate([ box_sx/2, box_sy/2, lid_sz/2+lid_ex_depth ])
+    translate([ box_sx/2, box_sy/2, lid_sz/2+rubber_thickness/4+MSA ])
     difference() {    
         roundCornersCube( box_sx, box_sy, rubber_thickness, box_r );    
-        roundCornersCube( box_sx-rubber_thickness, box_sy-rubber_thickness, lid_sz+rubber_thickness, box_r );    
+        roundCornersCube( box_sx-2*rubber_thickness, box_sy-2*rubber_thickness, lid_sz+rubber_thickness, box_r );    
     }
 
       }  // end difference for lid

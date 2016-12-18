@@ -12,7 +12,7 @@ shiftx = 5;
 shifty = 11;
 mountingHoleRadius = 2 / 2;
 
-parts = "all"; // all | box | lid | demo
+parts = "demo"; // all | box | lid | demo
 
 // -------------------
 module perfboard_support() {

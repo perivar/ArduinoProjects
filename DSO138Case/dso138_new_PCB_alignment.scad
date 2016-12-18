@@ -12,7 +12,7 @@
 //  Also increased spacing around switch holes and decreased switch size for more play
 //  Updated by Per Ivar Nerseth Dec 2016 to make more space for the PCB (too narrow)
 
-part = "buttons"; // [ demo, all, top, bottom, button, button2, slider, slider2, buttons ]
+part = "top"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
 with_batt = true; // [ true, false ]
 
 // real pcb size = 4.6 x 3 inch (thickness: 1.7 mm)
@@ -61,9 +61,9 @@ buttondia = 5.0; // PIN: made smaller, was 6.0
 slider1pos = [12.9-realpcb[0]/2, 18.0-realpcb[1]/2]; // from lower left corner //Edited CL first number was 13.5
 sliderdy = (42.4-7.0)/2;
 sliderdx = (9.6-5.4)/2 + 0.5; // add tolerance 
-sliderdia = 5.0; // PIN: made smaller, was 6.0
+sliderdia = 5.5; // PIN: made smaller, was 6.0
 sliderheight = 4.5; // above PCB
-slidersq = 2.0 + 1.0; // size of square slider button (with some extra tolerance) // Edited by PIN from +.2 to +.3 ?
+slidersq = 2.0 + 0.6; // size of square slider button (with some extra tolerance) // Edited by PIN from +.2 to +.6 ?
 
 trimmer1pos = [23.5-realpcb[0]/2, 44.7-realpcb[1]/2]; // from lower left corner
 trimmerdy = 53.3-44.7;
@@ -140,6 +140,7 @@ module top() {
 					// strengthening bars
 					translate([0, sign(dy)*(2*d+tol+pcb[1]/2-pcbmntdy/2)/2, 0]) c_cube(wall, 2*d+tol+pcb[1]/2-pcbmntdy/2, pcb2lcd); 
 					translate([sign(dx)*(2*d+tol+pcb[0]/2-pcbmntdx/2)/2, 0, 0]) c_cube(2*d+tol+pcb[0]/2-pcbmntdx/2, wall, pcb2lcd);
+                    
 				}
 			}
 			// LED frame and cone
@@ -461,14 +462,14 @@ if (part=="button2" || part=="buttons") {
 }
     
 // two of these
-if (part=="slider" || part=="buttons") {
+if (part=="slider" || part=="buttons" || part=="sliders") {
     for (i = [0, 30]) {
         translate([i,50,0]) slider();
     }
 } 
 
 // one of these    
-if (part=="slider2" || part=="buttons") {
+if (part=="slider2" || part=="buttons" || part=="sliders") {
     translate([30,10,0]) slider2();
 }
     
