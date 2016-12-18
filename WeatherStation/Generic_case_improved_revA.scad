@@ -69,6 +69,7 @@ box_bt = 2.0;      // box base or bottom thickness (should be a multiple of prin
 lid_sz = 2.0;      // lid size in Z axis or lid thickness (should be a multiple of printed layer height)
 lip_h = 1.60;      // lid lip height (should be a multiple of layer height)
 fit_tol = 0.40;    // fit tolerance or clearance between box and lid
+rubber_thickness = 1.75; // PIN: grove in the lid to add rubber to make the box water resistant
 
 // Mounting tab parameters for tailoring
 tab_use = true;     // true or false for mounting tab on x-axis yes/no
@@ -163,7 +164,7 @@ tab_hole_centers = [[          -tab_sx/2 ,          tab_hoy , 0 ],
 //////////////////////////////////////////////////////////////////////////////////////
 // Top level geometry
 // Edit true or false for obtaining box and lid respectively
-//rounded_cube_case(generate_box=true, generate_lid=true);
+rounded_cube_case(generate_box=true, generate_lid=true);
 
 //----------------------------------------------------------
 module standoff( post_od , post_id , post_h , hole_depth) {
@@ -317,49 +318,54 @@ module rounded_cube_case (generate_box, generate_lid) {
   }  // end if generate_box
 
   y_offset = generate_box ? box_sy+10 : 0; // offset lid Y by box_sy+10 if we are also doing box
+
   if ( generate_lid == true ) {        // we need to create the lid part
+      
+    lid_ex_side = 4; // PIN: add around the lid to make it watertight
+    lid_ex_depth = rubber_thickness;
     translate([ 0, y_offset, 0]) { 
       difference() {
         // create the base solids for the lid
         union() {
           // Start with a solid plate with rounded corners to match the box part
           translate([ box_sx/2, box_sy/2, lid_sz/2 ])
-            roundCornersCube( box_sx, box_sy, lid_sz, box_r );
+            roundCornersCube( box_sx+lid_ex_side, box_sy+lid_ex_side, lid_sz+lid_ex_depth, box_r );
  
-          // Add a reinforcement lip to the lid, starting with the straight portions 
+         // Add a reinforcement lip to the lid, starting with the straight portions 
           // increase lip width by MSA to ensure mesh with quarter circle lip added below
-          translate([ box_cp_od + fit_tol, box_wt + fit_tol, lid_sz ]) 
+          translate([ box_cp_od + fit_tol, box_wt + fit_tol, lid_sz+lid_ex_depth ]) 
             cube([box_sx - (box_cp_od*2) - (fit_tol*2), lip_w + MSA, lip_h ]); 
-          translate([box_wt + fit_tol, box_cp_od + fit_tol, lid_sz]) 
+          translate([box_wt + fit_tol, box_cp_od + fit_tol, lid_sz+lid_ex_depth]) 
             cube([ lip_w + MSA, box_sy - (box_cp_od*2) - (fit_tol*2), lip_h ]);
-          translate([box_sx - box_cp_or - fit_tol, box_cp_od + fit_tol, lid_sz ]) 
+          translate([box_sx - box_cp_or - fit_tol, box_cp_od + fit_tol, lid_sz+lid_ex_depth ]) 
             cube([lip_w + MSA, box_sy - (box_cp_od*2) - (fit_tol*2), lip_h ]);	
-          translate([box_cp_od + fit_tol, box_sy - box_cp_or - fit_tol, lid_sz]) 
+          translate([box_cp_od + fit_tol, box_sy - box_cp_or - fit_tol, lid_sz+lid_ex_depth]) 
             cube([box_sx - (box_cp_od*2) - (fit_tol*2), lip_w + MSA, lip_h]);
 					
           // Fit a quarter circle lip around the corner mounting posts
-          translate([ 0, 0, lid_sz]) 
+          translate([ 0, 0, lid_sz+lid_ex_depth]) 
             translate( lid_hole_centers[0] ) 
               rotate(180)  
                 cylindrical_lip( lip_arc_od, lip_h, lip_w );
-          translate([ 0, 0, lid_sz ])
+          translate([ 0, 0, lid_sz+lid_ex_depth ])
             translate( lid_hole_centers [1] )
               rotate(270)  
                 cylindrical_lip( lip_arc_od, lip_h, lip_w );
-          translate([ 0, 0, lid_sz ])
+          translate([ 0, 0, lid_sz+lid_ex_depth ])
             translate( lid_hole_centers [2] ) 
               cylindrical_lip( lip_arc_od, lip_h, lip_w );
-          translate([ 0, 0, lid_sz ])
+          translate([ 0, 0, lid_sz+lid_ex_depth ])
             translate( lid_hole_centers [3] )
               rotate(90)  
-                cylindrical_lip( lip_arc_od, lip_h, lip_w );
+                cylindrical_lip( lip_arc_od, lip_h, lip_w );    
+            
         }  // end union of the base solids for the lid
 
         for (i = lid_hole_centers) {               // for each corner in the lid
           // remove the material for the corner screw hole 
-          translate([ 0, 0, -MSA ])                // shift Z to ensure complete removal of hole
+          translate([ 0, 0, MSA ])                // shift Z to ensure complete removal of hole
             translate(i) 
-              polyhole( lid_sz + MDA, lid_hid );   // height is +MDA to ensure complete removal
+              polyhole( lid_sz + MDA + lid_ex_depth, lid_hid );   // height is +MDA to ensure complete removal
           if ( lid_rd > 0 ) {                      // we need to countersink the screw head
             // remove the material for the screw head recess 
             translate([ 0, 0, -MSA ])              // -MSA to offset oversize hole being removed
@@ -370,10 +376,13 @@ module rounded_cube_case (generate_box, generate_lid) {
 
         // Add removal of any holes in the lid here
         // Sample square hole centered in lid - uncomment and tailor as desired
-/*
-        translate([ box_sx/2, box_sy/2, lid_sz/2 ])
-          cube([ 15, 10, lid_sz + MDA], center=true );
-//*/
+
+          // Remove a grove in lid, to make it water-tight
+    translate([ box_sx/2, box_sy/2, lid_sz/2+lid_ex_depth ])
+    difference() {    
+        roundCornersCube( box_sx, box_sy, rubber_thickness, box_r );    
+        roundCornersCube( box_sx-rubber_thickness, box_sy-rubber_thickness, lid_sz+rubber_thickness, box_r );    
+    }
 
       }  // end difference for lid
     }  // end translate to move away from box if it is also being made
