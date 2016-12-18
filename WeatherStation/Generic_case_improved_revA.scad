@@ -164,7 +164,7 @@ tab_hole_centers = [[          -tab_sx/2 ,          tab_hoy , 0 ],
 //////////////////////////////////////////////////////////////////////////////////////
 // Top level geometry
 // Edit true or false for obtaining box and lid respectively
-rounded_cube_case(generate_box=true, generate_lid=true);
+//rounded_cube_case(generate_box=true, generate_lid=true);
 
 //----------------------------------------------------------
 module standoff( post_od , post_id , post_h , hole_depth) {
@@ -317,7 +317,7 @@ module rounded_cube_case (generate_box, generate_lid) {
 
   }  // end if generate_box
 
-  y_offset = generate_box ? box_sy+10 : 0; // offset lid Y by box_sy+10 if we are also doing box
+  y_offset = generate_box ? box_sy+22 : 0; // offset lid Y by box_sy+10 if we are also doing box
 
   if ( generate_lid == true ) {        // we need to create the lid part
       
