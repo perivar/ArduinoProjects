@@ -23,6 +23,9 @@ thickness = 2;
 
 module perfboard_mountingboard() {
     
+    difference() {
+        
+    union() {
     // bottom plate
     translate([pb_width/2,pb_depth/2,thickness/2])
     roundCornersCube( pb_width, pb_depth, thickness, 2);
@@ -33,10 +36,21 @@ module perfboard_mountingboard() {
                 translate([dx,dy,0])
                     standoff(Shape,BaseHeight,BaseDia,Style,TopHeight,TopDia);            
         }
-            
+    
+     // bars to position it within weather send box
+     translate([0,-9,0]) cube([4,59,thickness]);
+     translate([56,-9,0]) cube([4,59,thickness]);
+
+     translate([-4,0,0]) cube([65,4,thickness]);
+     translate([-4,40,0]) cube([65,4,thickness]);
+    }
+    
+        // remove a circle    
+        scale([1.5,1,1]) translate([20,22,-5]) cylinder(r=15, h=thickness+10);
+    }
+    
     // perf board
-    translate([0,0,BaseHeight])
-    perfboard_send();
+    //translate([0,0,BaseHeight]) perfboard_send();
 }
 
 //perfboard_mountingboard();

@@ -2,6 +2,7 @@ include <perfboard_send.scad>
 include <Batteries.scad>
 include <Generic_case_improved_revA.scad>
 include <Utils\roundedcube.scad>
+include <perfboard_mountingboard.scad>
 
 $fn = 20;
 
@@ -127,6 +128,7 @@ color("red") translate([shiftx+80,shifty+44,2+wall]) rotate([90,-90,0]) 9V();
 // the total height of the perfboard is 39 mm
 // NB note that the thickness of the box floor is 1 mm less than the outer thickness
 translate([shiftx, shifty, wall+height-1]) perfboard_send();
+
 }
 
 if (parts == "all" || parts == "demo" || parts == "box") {
@@ -147,7 +149,10 @@ difference() {
         }
         
         if (parts == "all" || parts == "box" || parts == "demo") {
-            color("red") perfboard_support();
+            color("red") 
+            perfboard_support();
+            //translate([shiftx, shifty, wall-1])perfboard_mountingboard();
+            
             
             translate([16,2,30]) rotate([180,0,0]) water_protector();
 
@@ -178,7 +183,7 @@ difference() {
         
            // the standoff walls are too long
             // cut where the battery are:
-            translate([66+wall,5,wall-tol]) cube([10, pb_width-10, 20]);
+            //translate([66+wall,5,wall-tol]) cube([10, pb_width-10, 20]);
         }
     }
 }
