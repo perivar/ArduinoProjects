@@ -4,8 +4,8 @@ include <arduino.scad>
 //enclosure(boardType = 4);
 
 epsilon = 0.1;
-mountingHeight = 8;
-mountingHoleRadius = 1.5;
+mountingHeight = 6.2; // the pcb spacers was 6,20 mm
+mountingHoleRadius = 2;
 
 height = 57;
 length = 70;
@@ -33,13 +33,16 @@ difference() {
     translate([-height/2+tab_margin,-length/2+tab_margin,0]) cylinder(r=tab_hole_radius, h=thickness+2*epsilon,center=true);    
 }
 
+// TAPHOLE = 0; 
+// PIN = 1;
+
 standoffs( 
   boardType = UNO, 
   height = mountingHeight, 
   topRadius = mountingHoleRadius + 1, 
   bottomRadius =  mountingHoleRadius + 2, 
   holeRadius = mountingHoleRadius,
-  mountType = TAPHOLE
+  mountType = PIN
 );
 
-//translate([0,0,standoff_height]) arduino(boardType = 4);
+//translate([0,0,mountingHeight]) arduino(boardType = 4);

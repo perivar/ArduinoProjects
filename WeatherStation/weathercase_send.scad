@@ -6,8 +6,8 @@ include <Utils\roundedcube.scad>
 $fn = 20;
 
 wall = box_wt;
-tol = 0.25;; // small addition
-height = 6;
+tol = 0.25; // small addition
+height = 7;
 shiftx = 5;
 shifty = 11;
 mountingHoleRadius = 2 / 2;
@@ -27,7 +27,8 @@ module perfboard_support() {
     pcbmntdy = pb_hole_dia/2+pb_hole_edge;
     
     // position within box
-    translate([pb_width/2+shiftx,pb_depth/2+shifty,0])
+    // NB note that the thickness of the box floor is 1 mm less than the outer thickness
+    translate([pb_width/2+shiftx,pb_depth/2+shifty,-1])
 
     difference() {
     
@@ -124,7 +125,8 @@ if (parts == "demo") {
 color("red") translate([shiftx+80,shifty+44,2+wall]) rotate([90,-90,0]) 9V();
 
 // the total height of the perfboard is 39 mm
-translate([shiftx, shifty, wall+height]) perfboard_send();
+// NB note that the thickness of the box floor is 1 mm less than the outer thickness
+translate([shiftx, shifty, wall+height-1]) perfboard_send();
 }
 
 if (parts == "all" || parts == "demo" || parts == "box") {
@@ -145,7 +147,7 @@ difference() {
         }
         
         if (parts == "all" || parts == "box" || parts == "demo") {
-            color("white") perfboard_support();
+            color("red") perfboard_support();
             
             translate([16,2,30]) rotate([180,0,0]) water_protector();
 
