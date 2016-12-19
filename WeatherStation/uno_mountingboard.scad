@@ -5,7 +5,7 @@ include <arduino.scad>
 
 epsilon = 0.1;
 mountingHeight = 6.2; // the pcb spacers was 6,20 mm
-mountingHoleRadius = 2;
+mountingHoleRadius = 1.5; // 1 was way to small
 
 height = 57;
 length = 70;
@@ -42,7 +42,7 @@ standoffs(
   topRadius = mountingHoleRadius + 1, 
   bottomRadius =  mountingHoleRadius + 2, 
   holeRadius = mountingHoleRadius,
-  mountType = PIN
+  mountType = TAPHOLE
 );
 
 //translate([0,0,mountingHeight]) arduino(boardType = 4);
