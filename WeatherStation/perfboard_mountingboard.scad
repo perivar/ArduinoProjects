@@ -1,22 +1,14 @@
 include <perfboard_send.scad>
-include <StandoffGenerator.scad>
+include <Utils\SnapLib.0.20.scad>
 use <Utils\roundCornersCube.scad>
 
-/* [Body] */
-//Choose shape of the main body
-Shape = 2; // [1:Round, 2:Square, 3:Hex]
 //Select height of the main body,  mm
-BaseHeight = 7; // [0:50]
-//Select diameter of the main body, mm
-BaseDia = 4; // [0:30]
+BaseHeight = 7; 
 
-/* [Top] */
-//Choose style of the top section
-Style = 2; // [1:Male, 2:Snap-In, 3:Flat, 4:Female, 5:Hollow]
 //Select height of the top, mm
-TopHeight = 4; // [2:20]
-//Select diameter of the top, mm
-TopDia = 2; // [1:25]
+TopHeight = 4;  
+//Select margin for the holes in the pcb, mm
+TopMargin = 2.1; 
 
 // bottom plate thickness
 thickness = 2;
@@ -31,26 +23,37 @@ module perfboard_mountingboard() {
     roundCornersCube( pb_width, pb_depth, thickness, 2);
 
     // standoffs
-    for (dx=[TopDia, pb_width-TopDia]) 
-        for (dy=[TopDia, pb_depth-TopDia]) {
-                translate([dx,dy,0])
-                    standoff(Shape,BaseHeight,BaseDia,Style,TopHeight,TopDia);            
+    for (dx=[TopMargin, pb_width-TopMargin]) 
+        for (dy=[TopMargin, pb_depth-TopMargin]) {
+                translate([dx,dy,BaseHeight/2-0.25]) cube([4,4,BaseHeight+2*0.25], center=true);
+            translate([dx,dy,BaseHeight-0.25]) cylinder(r = TopMargin/2-0.2, h = TopHeight+0.25, $fn = 20);
         }
     
      // bars to position it within weather send box
-     translate([0,-9,0]) cube([4,59,thickness]);
-     translate([56,-9,0]) cube([4,59,thickness]);
+     translate([5,-8.5,0]) cube([4,58.3,thickness]);
+     translate([55,-8.5,0]) cube([4,58.3,thickness]);
 
-     translate([-4,0,0]) cube([65,4,thickness]);
-     translate([-4,40,0]) cube([65,4,thickness]);
+     translate([-4.5,0,0]) cube([64,4,thickness]);
+     translate([-4.5,40,0]) cube([64,4,thickness]);
     }
     
         // remove a circle    
-        scale([1.5,1,1]) translate([20,22,-5]) cylinder(r=15, h=thickness+10);
+        scale([1.5,1,1]) translate([20,22,-5]) cylinder(r=17, h=thickness+10);
     }
     
     // perf board
     //translate([0,0,BaseHeight]) perfboard_send();
 }
 
-//perfboard_mountingboard();
+perfboard_mountingboard();
+
+snap_w = 6; // width of snap
+snap_h = 3;
+snap_a = 35;
+clearance = 0.2;
+translate([pb_width/2+snap_w/2,-clearance,0])
+rotate([0,-90,0]) SnapY(l=BaseHeight+pb_height+clearance,h=snap_h,a=snap_a,b=snap_w);
+translate([pb_width/2,0,0]) cylinder(r=7, h=thickness);
+
+translate([pb_width/2-snap_w/2,pb_depth+clearance,0])
+rotate([180,-90,0]) SnapY(l=BaseHeight+pb_height+clearance,h=snap_h,a=snap_a,b=snap_w);
