@@ -9,13 +9,27 @@ boolean debug=1;   //Set to 1 for console debugging
 #include <LiquidCrystal_I2C.h>
 #include <SD.h>
 
+#include <ClickEncoder.h> // Quad encoder
+#include <TimerOne.h> 
+#include <menu.h>//menu macros and objects
+#include <menuLCDs.h>//F. Malpartida LCD's
+#include <menuFields.h>
+#include <ClickEncoderStream.h> // New quadrature encoder driver and fake stream
+
+////////////////////////////////////////////
+// ENCODER (aka rotary switch) PINS
+// rotary
+#define CK_ENC  2 // Quand encoder on an ISR capable input
+#define DT_ENC  3
+#define SW_ENC  4
+
 LiquidCrystal_I2C display(0x3f, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 // Addr, En, Rw, Rs, d4, d5, d6, d7, backlighpin, polarity
 
 RTC_DS1307 rtc;
 
 RH_ASK radio;
-// RH_ASK radio(2000, 2, 4, 5); // ESP8266: do not use pin 11
+// RH_ASK radio(2000, 2, 4, 5); // UNO: use pin 11
 
 struct SensorData { 
 	float dht11_t;
@@ -32,7 +46,7 @@ SensorData sensor;
 // Note that even if it's not used as the CS pin, the hardware SS pin 
 // (10 on most Arduino boards, 53 on the Mega) must be left as an output 
 // or the SD library functions will not work. 
-const int chipSelect = 4;         // CS for SD card
+const int chipSelect = 5;         // CS for SD card // CHANGED FROM DEFAULT 4 to 5
 const int defaultSelectPin = 10;  // Uno R3
 
 // set up variables using the SD utility library functions:
@@ -97,10 +111,6 @@ void setup()
 	// make sure that the default chip select pin is declared OUTPUT, even if it's not used!
 	pinMode(defaultSelectPin, OUTPUT);
 
-	//if (!SD.begin(chipSelect)) {
-	//  Serial.println(F("SD initialization failed!"));
-	//}
-
   Serial.println(F("Initialization done!"));
 }
 
@@ -117,14 +127,14 @@ void loop()
 		display.backlight();
 		//display.clear();
 		display.setCursor(0, 0);
-		display.print("Temp: "); 
+		display.print(F("Temp: ")); 
 		display.print(sensor.dht11_t);
-		display.print(" *C");
+		display.print(F(" *C"));
 		
 		display.setCursor(0, 1);
-		display.print("Bat.: ");
+		display.print(F("Bat.: "));
 		display.print(sensor.battery);
-		display.print(" mV");
+		display.print(F(" mV"));
 		delay(3000);
 		//display.clear();
 		display.noBacklight();
@@ -144,25 +154,25 @@ void loop()
 			Serial.println();
 			
 			dataFile.print(now.day(), DEC);
-			dataFile.print('/');
+      dataFile.print(F("/"));
 			dataFile.print(now.month(), DEC);
-			dataFile.print('/');
+      dataFile.print(F("/"));
 			dataFile.print(now.year(), DEC);
-			dataFile.print(" , ");
+			dataFile.print(F(" , "));
 			dataFile.print(now.hour(), DEC);
-			dataFile.print(':');
+      dataFile.print(F(":"));
 			dataFile.print(now.minute(), DEC);
-			dataFile.print(" , ");  
-			dataFile.print(sensor.dht11_t);
-			dataFile.print(" , ");
+		  dataFile.print(F(" , "));
+      dataFile.print(sensor.dht11_t);
+      dataFile.print(F(" , "));
 			dataFile.print(sensor.dht11_h);
-			dataFile.print(" , ");
+      dataFile.print(F(" , "));
 			dataFile.print(sensor.bmp180_t);
-			dataFile.print(" , ");
+      dataFile.print(F(" , "));
 			dataFile.print(sensor.bmp180_p);
-			dataFile.print(" , ");
+      dataFile.print(F(" , "));
 			dataFile.print(sensor.bmp180_a);
-			dataFile.print(" , ");
+      dataFile.print(F(" , "));
 			dataFile.print(sensor.battery);
 			dataFile.println();
 			dataFile.close();
@@ -174,15 +184,15 @@ void loop()
 		{ 
 			// Print Now    
 			Serial.print(now.year(), DEC);
-			Serial.print('/');
+      Serial.print(F("/"));
 			Serial.print(now.month(), DEC);
-			Serial.print('/');
+      Serial.print(F("/"));
 			Serial.print(now.day(), DEC);
-			Serial.print(' ');
+      Serial.print(F(" "));
 			Serial.print(now.hour(), DEC);
-			Serial.print(':');
+      Serial.print(F(":"));
 			Serial.print(now.minute(), DEC);
-			Serial.print(':');
+      Serial.print(F(":"));
 			Serial.print(now.second(), DEC);
 			Serial.println();
 			
@@ -213,6 +223,8 @@ void loop()
 	}
 }
 
+// don't use sprintf since it consumes more ram
+// https://forum.arduino.cc/index.php?topic=127933.0
 void getFileName(char *filename) {
 	DateTime now = rtc.now(); 
 	int year = now.year(); 
@@ -233,8 +245,4 @@ void getFileName(char *filename) {
 	return;
 }
 
-void getFileName2(){
-	DateTime now = rtc.now();
-	sprintf(filename, "%02d%02d%02d.csv", now.year(), now.month(), now.day());
-}
 
