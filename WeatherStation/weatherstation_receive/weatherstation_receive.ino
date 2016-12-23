@@ -1,4 +1,4 @@
-boolean debug=1;   //Set to 1 for console debugging
+boolean debug=0;   //Set to 1 for console debugging
 
 // see: https://github.com/mrkrasser/WeatherStation/blob/master/DisplayNode/DisplayNode.ino
 
@@ -149,7 +149,7 @@ void setup()
 	} else {
 		// following line sets the RTC to the date & time this sketch was compiled
 		// comment out after this has been set once.
-		rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+		//rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
     Serial.println(F("RTC OK"));
 		
