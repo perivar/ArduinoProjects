@@ -11,20 +11,110 @@ boolean debug=1;   //Set to 1 for console debugging
 
 #include <ClickEncoder.h> // Quad encoder
 #include <TimerOne.h> 
-#include <menu.h>//menu macros and objects
-#include <menuLCDs.h>//F. Malpartida LCD's
+#include <menu.h> // menu macros and objects
+#include <menuLCDs.h> // F. Malpartida LCD's
 #include <menuFields.h>
 #include <ClickEncoderStream.h> // New quadrature encoder driver and fake stream
 
-////////////////////////////////////////////
-// ENCODER (aka rotary switch) PINS
-// rotary
-#define CK_ENC  2 // Quand encoder on an ISR capable input
-#define DT_ENC  3
-#define SW_ENC  4
+#define LEDPIN LED_BUILTIN
 
 LiquidCrystal_I2C display(0x3f, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 // Addr, En, Rw, Rs, d4, d5, d6, d7, backlighpin, polarity
+
+////////////////////////////////////////////
+// ENCODER (aka rotary switch) PINS
+#define CK_ENC  2 // Quad encoder on an ISR capable input
+#define DT_ENC  3
+#define SW_ENC  4
+
+////////////////////////////////////////////
+// MENU methods
+ClickEncoder qEnc(DT_ENC, CK_ENC, SW_ENC, 4, LOW);
+
+/* Quad encoder */
+ClickEncoderStream enc(qEnc, 1);// simple quad encoder fake Stream
+
+void timerIsr() { 
+  qEnc.service(); 
+}
+
+menuLCD menu_lcd(display,16,2);
+
+///////////////////////////////////////////////////////////////////////////
+//functions to wire as menu actions
+
+bool ledOn() {
+	digitalWrite(LEDPIN,1);
+	return true;
+}
+
+bool ledOff() {
+	digitalWrite(LEDPIN,0);
+	return true;
+}
+
+// close menu
+bool exitMenu() {
+	return true;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// MENU DEFINITION WITH MACROS
+int frequency = 50;
+
+//a submenu
+MENU(ledMenu,"LED",
+OP("On",ledOn),
+OP("Off",ledOff)
+);
+
+MENU(mainMenu,"Main",
+FIELD(frequency,"Freq","Hz",0,100,1,0),
+SUBMENU(ledMenu),
+OP("< BACK",exitMenu)
+);
+
+////////////////////////////////////////////
+// ICONS
+// http://maxpromer.github.io/LCD-Character-Creator/
+static const byte THERMO_CHAR = 1;
+byte thermo[8] = 
+{
+	B00100,
+	B01010,
+	B01010,
+	B01110,
+	B01110,
+	B11111,
+	B11111,
+	B01110
+};
+
+static const byte DROPLET_CHAR = 2;
+byte waterdroplet[8] = 
+{
+	B00100,
+	B00100,
+	B01010,
+	B01010,
+	B10001,
+	B10001,
+	B10001,
+	B01110,
+};
+
+static const byte SIGNAL_CHAR = 3;
+byte signal[8] = 
+{
+	B00001,
+	B00001,
+	B00001,
+	B00101,
+	B00101,
+	B10101,
+	B10101,
+	B10101
+};
 
 RTC_DS1307 rtc;
 
@@ -58,86 +148,106 @@ void setup()
 	if (debug==1)
 	{ 
 		Serial.begin(9600); 
-		Serial.println(F("Initializing ..."));
+		Serial.println(F("Init ..."));
 	}
 
 	// Setting up LCD
 	display.begin(16, 2);
 	display.backlight();
-	display.setCursor(0, 0);
-	display.print("Reidar's");
-	display.setCursor(0, 1);
-	display.print("Vaerstasjon");
-	delay(3000);
-	//display.noBacklight();
+	display.clear();
+	display.createChar(THERMO_CHAR, thermo);
+	display.createChar(DROPLET_CHAR, waterdroplet);
+	display.createChar(SIGNAL_CHAR, signal);
+
+	// Print boot sequence
+	displayBootSequence();
+  display.clear();
 
 	if (!rtc.begin()) {
-		Serial.println(F("Couldn't find RTC"));
+		Serial.println(F("RTC Missing!"));
 		while (1);
 	}
 
 	if (!rtc.isrunning()) {
-		Serial.println(F("RTC is NOT running!"));
+		Serial.println(F("RTC Failed!"));
 	} else {
 		// following line sets the RTC to the date & time this sketch was compiled
+		// comment out after this has been set once.
 		rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
+    Serial.println(F("RTC OK"));
+		
 		// Print Now
-		DateTime now = rtc.now();      
-		display.clear();
-		display.setCursor(0, 0);
-		display.print(now.year(), DEC);
-		display.print('/');
-		display.print(now.month(), DEC);
-		display.print('/');
-		display.print(now.day(), DEC);
-		display.setCursor(0, 1);
-		display.print(now.hour(), DEC);
-		display.print(':');
-		display.print(now.minute(), DEC);
-		display.print(':');
-		display.print(now.second(), DEC);    
-		delay(2000);
+		displayTime();
 	}
 
 	if (!radio.init()) {
-		Serial.println(F("Init failed!"));
+		Serial.println(F("Radio Failed!"));
 	} else {
-		Serial.println(F("Init successful."));
+		Serial.println(F("Radio OK."));
 		radio.setModeRx();
 	}
 
-	Serial.println(F("Initializing SD card..."));
+	Serial.println(F("Init SD card ..."));
 	// make sure that the default chip select pin is declared OUTPUT, even if it's not used!
 	pinMode(defaultSelectPin, OUTPUT);
 
-  Serial.println(F("Initialization done!"));
+	Serial.println(F("Init done!"));
+
+	display.setCursor(0, 1);
+	display.print(F("Venter ..."));
+  
+	displayTempAndHumid();
+
+  // Encoder init
+  qEnc.setAccelerationEnabled(false);
+  qEnc.setDoubleClickEnabled(true); // must be on otherwise the menu library Hang
+
+  // ISR init
+  Timer1.initialize(5000); // every 0.05 seconds
+  Timer1.attachInterrupt(timerIsr);
 }
+
+int16_t last, value;
 
 void loop()
 {
 	uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
 	uint8_t buflen = sizeof(buf);
-	
+
+	//mainMenu.poll(menu_lcd,enc);
+
+  // handle click encoder
+  value += qEnc.getValue();
+  if (value != last) {
+    last = value;
+    Serial.print(F("Encoder Value: "));
+    Serial.println(value);
+  }
+
+  // check the encoder button
+  ClickEncoder::Button b = qEnc.getButton();
+  if (b != ClickEncoder::Open) {
+    Serial.print(F("Button: "));
+    #define VERBOSECASE(label) case label: Serial.println(F(#label)); break;
+    switch (b) {
+      VERBOSECASE(ClickEncoder::Pressed)
+      VERBOSECASE(ClickEncoder::Held)
+      VERBOSECASE(ClickEncoder::Released)
+      VERBOSECASE(ClickEncoder::Clicked)
+      VERBOSECASE(ClickEncoder::DoubleClicked)
+        break;
+    }   
+  }  
+
+  // Check if we have received any data from the RF radio
 	if (radio.recv(buf, &buflen)) // Non-blocking
 	{
+    displaySignalOn();
+    
 		memcpy(&sensor, &buf, sizeof(sensor)); 
-		
-		// show data on screen
-		display.backlight();
-		//display.clear();
-		display.setCursor(0, 0);
-		display.print(F("Temp: ")); 
-		display.print(sensor.dht11_t);
-		display.print(F(" *C"));
-		
-		display.setCursor(0, 1);
-		display.print(F("Bat.: "));
-		display.print(sensor.battery);
-		display.print(F(" mV"));
-		delay(3000);
-		//display.clear();
-		display.noBacklight();
+
+		displayTempAndHumid();
 
 		// get now
 		DateTime now = rtc.now();  
@@ -154,73 +264,163 @@ void loop()
 			Serial.println();
 			
 			dataFile.print(now.day(), DEC);
-      dataFile.print(F("/"));
+			dataFile.print(F("/"));
 			dataFile.print(now.month(), DEC);
-      dataFile.print(F("/"));
+			dataFile.print(F("/"));
 			dataFile.print(now.year(), DEC);
 			dataFile.print(F(" , "));
 			dataFile.print(now.hour(), DEC);
-      dataFile.print(F(":"));
+			dataFile.print(F(":"));
 			dataFile.print(now.minute(), DEC);
-		  dataFile.print(F(" , "));
-      dataFile.print(sensor.dht11_t);
-      dataFile.print(F(" , "));
+			dataFile.print(F(" , "));
+			dataFile.print(sensor.dht11_t);
+			dataFile.print(F(" , "));
 			dataFile.print(sensor.dht11_h);
-      dataFile.print(F(" , "));
+			dataFile.print(F(" , "));
 			dataFile.print(sensor.bmp180_t);
-      dataFile.print(F(" , "));
+			dataFile.print(F(" , "));
 			dataFile.print(sensor.bmp180_p);
-      dataFile.print(F(" , "));
+			dataFile.print(F(" , "));
 			dataFile.print(sensor.bmp180_a);
-      dataFile.print(F(" , "));
+			dataFile.print(F(" , "));
 			dataFile.print(sensor.battery);
 			dataFile.println();
 			dataFile.close();
 			Serial.println(F("Done writing to SD card."));
 		}
-		
-		// print data for debugging
-		if (debug==1)
-		{ 
-			// Print Now    
-			Serial.print(now.year(), DEC);
-      Serial.print(F("/"));
-			Serial.print(now.month(), DEC);
-      Serial.print(F("/"));
-			Serial.print(now.day(), DEC);
-      Serial.print(F(" "));
-			Serial.print(now.hour(), DEC);
-      Serial.print(F(":"));
-			Serial.print(now.minute(), DEC);
-      Serial.print(F(":"));
-			Serial.print(now.second(), DEC);
-			Serial.println();
-			
-			// Message with a good checksum received, dump it.
-			radio.printBuffer("Received:", buf, buflen);
-			
-			Serial.print(F("DHT11    T:")); 
-			Serial.print(sensor.dht11_t);
-			Serial.print(F("*C "));
-			Serial.print(F("H:")); 
-			Serial.print(sensor.dht11_h);
-			Serial.println(F("%"));
-			
-			Serial.print(F("BMP180   T:"));
-			Serial.print(sensor.bmp180_t);
-			Serial.print(F("*C "));
-			Serial.print(F("P:"));
-			Serial.print(sensor.bmp180_p);
-			Serial.print(F("Pa "));
-			Serial.print(F("A:"));
-			Serial.print(sensor.bmp180_a);
-			Serial.println(F("m"));
-
-			Serial.print(F("BATT     V:")); 
-			Serial.print(sensor.battery);
-			Serial.println(F(" mV"));
-		}        
+		displaySignalOff(); 
+    debugReceivedData(now, buf);
 	}
+}
+
+// print data for debugging
+void debugReceivedData(DateTime now, uint8_t buf) {
+  if (debug==1)
+  { 
+    uint8_t buflen = sizeof(buf);
+    
+    // Print Now    
+    Serial.print(now.year(), DEC);
+    Serial.print(F("/"));
+    Serial.print(now.month(), DEC);
+    Serial.print(F("/"));
+    Serial.print(now.day(), DEC);
+    Serial.print(F(" "));
+    Serial.print(now.hour(), DEC);
+    Serial.print(F(":"));
+    Serial.print(now.minute(), DEC);
+    Serial.print(F(":"));
+    Serial.print(now.second(), DEC);
+    Serial.println();
+    
+    // Message with a good checksum received, dump it.
+    radio.printBuffer("Received:", buf, buflen);
+    
+    Serial.print(F("DHT11    T:")); 
+    Serial.print(sensor.dht11_t);
+    Serial.print(F("*C "));
+    Serial.print(F("H:")); 
+    Serial.print(sensor.dht11_h);
+    Serial.println(F("%"));
+    
+    Serial.print(F("BMP180   T:"));
+    Serial.print(sensor.bmp180_t);
+    Serial.print(F("*C "));
+    Serial.print(F("P:"));
+    Serial.print(sensor.bmp180_p);
+    Serial.print(F("Pa "));
+    Serial.print(F("A:"));
+    Serial.print(sensor.bmp180_a);
+    Serial.println(F("m"));
+
+    Serial.print(F("BATT     V:")); 
+    Serial.print(sensor.battery);
+    Serial.println(F(" mV"));
+  }        
+}
+
+void displayBootSequence() {
+	display.setCursor(0, 0);
+	display.print(F("Reidar's"));
+	display.setCursor(0, 1);
+	display.print(F("Vaerstasjon "));
+	delay(4000);
+	//display.noBacklight();  
+}
+
+void displayTempAndHumidOld() {
+	// show data on screen
+	display.backlight();
+	//display.clear();
+	display.setCursor(0, 0);
+	display.print(F("Temp: ")); 
+	display.print(sensor.dht11_t);
+	display.print(F(" *C"));
+	
+	display.setCursor(0, 1);
+	display.print(F("Bat.: "));
+	display.print(sensor.battery);
+	display.print(F(" mV"));
+	delay(3000);
+	//display.clear();
+	display.noBacklight();
+}
+
+void displaySignalOn() {
+  display.setCursor(15, 0);
+  display.print((char)SIGNAL_CHAR);
+}
+
+void displaySignalOff() {
+  display.setCursor(15, 0);
+  display.print(' ');
+}
+
+void displayTempAndHumid() {
+	display.setCursor(0, 1);
+	display.print(F("                  "));
+
+	display.setCursor(1, 1);
+	display.print((char)THERMO_CHAR);
+	display.setCursor(3, 1);
+	//display.print(sensor.dht11_t, 0);
+	display.print(sensor.bmp180_t, 0);
+	display.setCursor(5, 1);
+	display.print((char)223); //degree sign
+	display.print("C");
+
+	display.setCursor(9, 1);
+	display.print((char)DROPLET_CHAR);
+	display.setCursor(11, 1);
+	display.print(sensor.dht11_h, 0);
+	display.print("%");
+	delay(2000);
+}
+
+void displayTime() {
+	DateTime now = rtc.now();      
+	display.setCursor(0, 0);
+	displayPrint2Digits(now.hour());
+	display.print(':');
+	displayPrint2Digits(now.minute());
+	//display.print(':');
+	//displayPrint2Digits(now.second());    
+
+	display.print(F(" "));
+	displayPrint2Digits(now.day());
+	display.print(F("/"));
+	displayPrint2Digits(now.month());
+	display.print(F("/"));
+	displayPrint2Digits(now.year()-2000);	
+	delay(2000);
+}
+
+// this adds a 0 before single digit numbers
+void displayPrint2Digits(int number) { 
+	if (number >= 0 && number < 10) {
+		display.write('0');
+	}
+	display.print(number);
 }
 
 // don't use sprintf since it consumes more ram
