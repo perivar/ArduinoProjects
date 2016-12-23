@@ -28,51 +28,14 @@ LiquidCrystal_I2C display(0x3f, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 #define SW_ENC  4
 
 ////////////////////////////////////////////
-// MENU methods
+// Click Encoder
 ClickEncoder qEnc(DT_ENC, CK_ENC, SW_ENC, 4, LOW);
 
-/* Quad encoder */
-ClickEncoderStream enc(qEnc, 1);// simple quad encoder fake Stream
+int16_t last, value;
 
 void timerIsr() { 
   qEnc.service(); 
 }
-
-menuLCD menu_lcd(display,16,2);
-
-///////////////////////////////////////////////////////////////////////////
-//functions to wire as menu actions
-
-bool ledOn() {
-	digitalWrite(LEDPIN,1);
-	return true;
-}
-
-bool ledOff() {
-	digitalWrite(LEDPIN,0);
-	return true;
-}
-
-// close menu
-bool exitMenu() {
-	return true;
-}
-
-/////////////////////////////////////////////////////////////////////////
-// MENU DEFINITION WITH MACROS
-int frequency = 50;
-
-//a submenu
-MENU(ledMenu,"LED",
-OP("On",ledOn),
-OP("Off",ledOff)
-);
-
-MENU(mainMenu,"Main",
-FIELD(frequency,"Freq","Hz",0,100,1,0),
-SUBMENU(ledMenu),
-OP("< BACK",exitMenu)
-);
 
 ////////////////////////////////////////////
 // ICONS
@@ -116,6 +79,18 @@ byte signal[8] =
 	B10101
 };
 
+static const byte BATTERY_CHAR = 4;
+byte battery[8] = {
+  B01110,
+  B11011,
+  B10001,
+  B10001,
+  B10001,
+  B10001,
+  B10001,
+  B11111
+};
+
 RTC_DS1307 rtc;
 
 RH_ASK radio;
@@ -150,7 +125,7 @@ void setup()
 		Serial.begin(9600); 
 		Serial.println(F("Init ..."));
 	}
-
+ 
 	// Setting up LCD
 	display.begin(16, 2);
 	display.backlight();
@@ -158,6 +133,7 @@ void setup()
 	display.createChar(THERMO_CHAR, thermo);
 	display.createChar(DROPLET_CHAR, waterdroplet);
 	display.createChar(SIGNAL_CHAR, signal);
+  display.createChar(BATTERY_CHAR, battery);
 
 	// Print boot sequence
 	displayBootSequence();
@@ -197,26 +173,24 @@ void setup()
 	display.setCursor(0, 1);
 	display.print(F("Venter ..."));
   
-	displayTempAndHumid();
-
   // Encoder init
   qEnc.setAccelerationEnabled(false);
   qEnc.setDoubleClickEnabled(true); // must be on otherwise the menu library Hang
 
+  /*
+  // ISR makes the RF stop working?!
   // ISR init
   Timer1.initialize(5000); // every 0.05 seconds
   Timer1.attachInterrupt(timerIsr);
+  */
 }
-
-int16_t last, value;
 
 void loop()
 {
 	uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
 	uint8_t buflen = sizeof(buf);
 
-	//mainMenu.poll(menu_lcd,enc);
-
+  /*
   // handle click encoder
   value += qEnc.getValue();
   if (value != last) {
@@ -234,11 +208,17 @@ void loop()
       VERBOSECASE(ClickEncoder::Pressed)
       VERBOSECASE(ClickEncoder::Held)
       VERBOSECASE(ClickEncoder::Released)
-      VERBOSECASE(ClickEncoder::Clicked)
-      VERBOSECASE(ClickEncoder::DoubleClicked)
+      case ClickEncoder::Clicked:
+        Serial.println("ClickEncoder::Clicked");
+        displayBattery();
+        break;
+      case ClickEncoder::DoubleClicked:
+        Serial.println("ClickEncoder::DoubleClicked");
+        displayPressure();
         break;
     }   
   }  
+  */
 
   // Check if we have received any data from the RF radio
 	if (radio.recv(buf, &buflen)) // Non-blocking
@@ -247,11 +227,12 @@ void loop()
     
 		memcpy(&sensor, &buf, sizeof(sensor)); 
 
-		displayTempAndHumid();
-
 		// get now
 		DateTime now = rtc.now();  
-		
+
+    displayTime();
+    displayTempAndHumid();
+    
 		// store to SD card
 		getFileName(filename);
 
@@ -259,9 +240,11 @@ void loop()
 
 		// if the file is available, write to it:
 		if (dataFile) {
-			Serial.print(F("Saving to: "));
-			Serial.print(filename);
-			Serial.println();
+      if (debug==1) { 
+  			Serial.print(F("Saving to: "));
+  			Serial.print(filename);
+  			Serial.println();
+      }
 			
 			dataFile.print(now.day(), DEC);
 			dataFile.print(F("/"));
@@ -286,19 +269,18 @@ void loop()
 			dataFile.print(sensor.battery);
 			dataFile.println();
 			dataFile.close();
-			Serial.println(F("Done writing to SD card."));
+			if (debug==1) Serial.println(F("Done writing to SD card."));
 		}
-		displaySignalOff(); 
-    debugReceivedData(now, buf);
+
+    debugReceivedData(now, buf, buflen);
+    delay(500);
+    displaySignalOff(); 
 	}
 }
 
 // print data for debugging
-void debugReceivedData(DateTime now, uint8_t buf) {
-  if (debug==1)
-  { 
-    uint8_t buflen = sizeof(buf);
-    
+void debugReceivedData(DateTime now, uint8_t buf, uint8_t buflen) {
+  if (debug==1) { 
     // Print Now    
     Serial.print(now.year(), DEC);
     Serial.print(F("/"));
@@ -344,26 +326,18 @@ void displayBootSequence() {
 	display.print(F("Reidar's"));
 	display.setCursor(0, 1);
 	display.print(F("Vaerstasjon "));
-	delay(4000);
+	delay(3000);
 	//display.noBacklight();  
 }
 
-void displayTempAndHumidOld() {
-	// show data on screen
-	display.backlight();
-	//display.clear();
-	display.setCursor(0, 0);
-	display.print(F("Temp: ")); 
-	display.print(sensor.dht11_t);
-	display.print(F(" *C"));
-	
-	display.setCursor(0, 1);
-	display.print(F("Bat.: "));
-	display.print(sensor.battery);
-	display.print(F(" mV"));
-	delay(3000);
-	//display.clear();
-	display.noBacklight();
+void displayBatteryLowOn() {
+  display.setCursor(15, 1);
+  display.print((char)BATTERY_CHAR);
+}
+
+void displayBatteryLowOff() {
+  display.setCursor(15, 1);
+  display.print(' ');
 }
 
 void displaySignalOn() {
@@ -376,9 +350,13 @@ void displaySignalOff() {
   display.print(' ');
 }
 
+void clearLine(int col) {
+  display.setCursor(0, col);
+  display.print(F("                "));
+}
+
 void displayTempAndHumid() {
-	display.setCursor(0, 1);
-	display.print(F("                  "));
+  clearLine(1);
 
 	display.setCursor(1, 1);
 	display.print((char)THERMO_CHAR);
@@ -394,7 +372,17 @@ void displayTempAndHumid() {
 	display.setCursor(11, 1);
 	display.print(sensor.dht11_h, 0);
 	display.print("%");
-	delay(2000);
+	//delay(2000);
+}
+
+void displayBattery() {
+  clearLine(1);
+  
+  display.setCursor(0, 1);
+  display.print(F("Bat.: "));
+  display.print(sensor.battery);
+  display.print(F(" mV"));
+  //delay(2000);
 }
 
 void displayTime() {
@@ -412,7 +400,18 @@ void displayTime() {
 	displayPrint2Digits(now.month());
 	display.print(F("/"));
 	displayPrint2Digits(now.year()-2000);	
-	delay(2000);
+	//delay(2000);
+}
+
+void displayPressure() {
+  display.clear();
+  display.setCursor(0, 0);
+  display.print(sensor.bmp180_p);
+  display.print(F(" Pa"));
+  display.setCursor(0, 1);
+  display.print(sensor.bmp180_a);
+  display.print(F(" m"));
+  //delay(2000);
 }
 
 // this adds a 0 before single digit numbers
