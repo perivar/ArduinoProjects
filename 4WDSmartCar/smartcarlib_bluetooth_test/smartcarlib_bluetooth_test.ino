@@ -57,7 +57,7 @@ void loop(){
         Serial.println(receivedBluetoothString.toInt());
       }
 
-      Serial.println(receivedBluetoothString);
+      Serial.print(receivedBluetoothString);
       receivedBluetoothString = "";
     }
   }
