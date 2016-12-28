@@ -12,7 +12,7 @@
 //  Also increased spacing around switch holes and decreased switch size for more play
 //  Updated by Per Ivar Nerseth Dec 2016 to make more space for the PCB (too narrow)
 
-part = "top"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
+part = "demo"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
 with_batt = true; // [ true, false ]
 
 // real pcb size = 4.6 x 3 inch (thickness: 1.7 mm)
@@ -39,7 +39,7 @@ echo(str("PCB Mount: ", pcbmntdx, " x ", pcbmntdy, " mm"));
 
 batt = [26.0, 54.0, 17.0]; // 9 V battery with contact
 lcdwinsize = [50.0+2, 37.0+2];
-lcdpos = [realpcb[0]/2-lcdwinsize[0]/2-27.5, 17.5-(realpcb[1]/2-lcdwinsize[1]/2)]; // from lower right corner
+lcdpos = [realpcb[0]/2-lcdwinsize[0]/2-28.5, 17.5-(realpcb[1]/2-lcdwinsize[1]/2)]; // from lower right corner, PIN: was -27.5, changed to -28.5
 lcdpcb = [53+2*10, 43+2*7]; // assume symmetrical, with margin
 lcdframeh = 2.3; // frame height
 
@@ -50,13 +50,14 @@ pcb2bot = 4.0; // room from bottom pcb to bottom cover
 pcb2lcd = 14.0; // room from top pcb to top LCD surface
 
 buttonclearance = 0.2; //amount to subtract from button diameter for hole clearance Added by CL
-buttoninsertheight = 12; //Added by CL - switched height for actuators to a separate variable to isolate from changes to main top case button cutout heights - actual height is this plus the radius of button because of sphere ontop
+buttoninsertheight = 11; //Added by CL - switched height for actuators to a separate variable to isolate from changes to main top case button cutout heights - actual height is this plus the radius of button because of sphere ontop
     // PIN: was 11, added more
 
 buttonrpos = [realpcb[0]/2-20.0, 5.0-realpcb[1]/2]; // from lower right corner, reset switch
 button1pos = [realpcb[0]/2-9.2, 18.0-realpcb[1]/2]; // from lower right corner, other switches
 buttondy = 38.0/3;
-buttondia = 5.0; // PIN: made smaller, was 6.0
+buttondia = 5.5; // PIN: made smaller, was 6.0
+buttonheight = 6+0.8; // above PCB, plus some extra tolerance //Edited by CL was 4.9
 
 slider1pos = [12.9-realpcb[0]/2, 18.0-realpcb[1]/2]; // from lower left corner //Edited CL first number was 13.5
 sliderdy = (42.4-7.0)/2;
@@ -70,14 +71,14 @@ trimmerdy = 53.3-44.7;
 trimmerdia = 4; //Edited by CL was 3.1
 trimmerheight = 6.6; // above PCB //Edited by CL was 4.6
 
-bncpos = 15.8-realpcb[0]/2; // from upper left corner
+bncpos = 16.8-realpcb[0]/2; // from upper left corner, PIN: was 15.8, changed to 16.8
 bncdia = 9.6+1.0; // 1.0 is extra margin
 
 testpos = realpcb[0]/2-39.3; // from upper right corner
 testpdx = 5.5;
 testpdy = 5; 
 
-powerpos = realpcb[0]/2-20.9; // from upper right corner
+powerpos = realpcb[0]/2-19.9; // from upper right corner, PIN: was -20.9, changed to -19.9
 powerdx = 9.0;
 powerdz = 11.0;
 
