@@ -43,7 +43,7 @@ lcdpos = [realpcb[0]/2-lcdwinsize[0]/2-28.5, 17.5-(realpcb[1]/2-lcdwinsize[1]/2)
 lcdpcb = [53+2*10, 43+2*7]; // assume symmetrical, with margin
 lcdframeh = 2.3; // frame height
 
-ledpos = [realpcb[0]/2-29.5, 8.0-realpcb[1]/2]; // from lower right corner
+ledpos = [realpcb[0]/2-28.5, 8.0-realpcb[1]/2]; // from lower right corner, PIN: was -29.5, changed to -28.5
 leddia = 3.2;
 
 pcb2bot = 4.0; // room from bottom pcb to bottom cover
@@ -53,8 +53,10 @@ buttonclearance = 0.2; //amount to subtract from button diameter for hole cleara
 buttoninsertheight = 11; //Added by CL - switched height for actuators to a separate variable to isolate from changes to main top case button cutout heights - actual height is this plus the radius of button because of sphere ontop
     // PIN: was 11, added more
 
-buttonrpos = [realpcb[0]/2-20.0, 5.0-realpcb[1]/2]; // from lower right corner, reset switch
-button1pos = [realpcb[0]/2-9.2, 18.0-realpcb[1]/2]; // from lower right corner, other switches
+buttonrpos = [realpcb[0]/2-19.0, 5.0-realpcb[1]/2]; // from lower right corner, reset switch
+    // PIN was -20.0, changed to -19.0
+button1pos = [realpcb[0]/2-8.2, 18.0-realpcb[1]/2]; // from lower right corner, other switches
+    // PIN was -9.2, changed to -8.2
 buttondy = 38.0/3;
 buttondia = 5.5; // PIN: made smaller, was 6.0
 buttonheight = 6+0.8; // above PCB, plus some extra tolerance //Edited by CL was 4.9
@@ -82,9 +84,10 @@ powerpos = realpcb[0]/2-19.9; // from upper right corner, PIN: was -20.9, change
 powerdx = 9.0;
 powerdz = 11.0;
 
-usbpos = realpcb[0]/2-57.5; // from lower right corner // Added by CL
+usbpos = realpcb[0]/2-56.5; // from lower right corner // Added by CL
+    // PIN, was -57.5, changed to -56.5
 usbdx = 9;
-usbdz = 4.2;
+usbdz = 4.2; 
 
 
 switchneck = 6.0; // neck of toggle switch
