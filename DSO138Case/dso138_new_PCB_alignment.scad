@@ -12,7 +12,7 @@
 //  Also increased spacing around switch holes and decreased switch size for more play
 //  Updated by Per Ivar Nerseth Dec 2016 to make more space for the PCB (too narrow)
 
-part = "demo"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
+part = "top"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
 with_batt = true; // [ true, false ]
 
 // real pcb size = 4.6 x 3 inch (thickness: 1.7 mm)
