@@ -3,7 +3,7 @@
 // (which also goes to the computer via the USB connection). 
 // Since we want to use the hardware serial at the same time as the bluetooth module
 // we need to use SoftwareSerial on different pins.
-SoftwareSerial bluetooth(2, 3); // RX, TX
+SoftwareSerial bluetooth(12, 13); // RX, TX
 
 int LEFT_MOTOR_PWM_PIN = 10;
 int LEFT_MOTOR_1 = 9;
