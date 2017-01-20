@@ -1,4 +1,4 @@
-boolean debug=0;   //Set to 1 for console debugging
+boolean debug=1;   //Set to 1 for console debugging
 
 // see: https://github.com/mrkrasser/WeatherStation/blob/master/DisplayNode/DisplayNode.ino
 
@@ -95,6 +95,7 @@ RTC_DS1307 rtc;
 
 RH_ASK radio;
 // RH_ASK radio(2000, 2, 4, 5); // UNO: use pin 11
+// Note had to uncomment the line #define RH_ASK_ARDUINO_USE_TIMER2 in RH_ASK.cpp
 
 struct SensorData { 
 	float dht11_t;
@@ -177,12 +178,10 @@ void setup()
   qEnc.setAccelerationEnabled(false);
   qEnc.setDoubleClickEnabled(true); // must be on otherwise the menu library Hang
 
-  /*
   // ISR makes the RF stop working?!
   // ISR init
   Timer1.initialize(5000); // every 0.05 seconds
   Timer1.attachInterrupt(timerIsr);
-  */
 }
 
 void loop()
@@ -190,7 +189,6 @@ void loop()
 	uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
 	uint8_t buflen = sizeof(buf);
 
-  /*
   // handle click encoder
   value += qEnc.getValue();
   if (value != last) {
@@ -218,7 +216,6 @@ void loop()
         break;
     }   
   }  
-  */
 
   // Check if we have received any data from the RF radio
 	if (radio.recv(buf, &buflen)) // Non-blocking

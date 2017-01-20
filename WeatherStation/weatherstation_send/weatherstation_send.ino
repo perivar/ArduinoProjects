@@ -1,4 +1,4 @@
-boolean debug=1;   //Set to 1 for console debugging
+boolean debug=0;   //Set to 1 for console debugging
 
 // see: https://github.com/mrkrasser/WeatherStation/blob/master/SensorNode/SensorNode.ino
 
@@ -7,18 +7,20 @@ boolean debug=1;   //Set to 1 for console debugging
 #include <DHT.h>
 #include <Wire.h>
 #include <Adafruit_BMP085.h>
+#include "LowPower.h" // https://github.com/rocketscream/Low-Power
 
-#define DHTPIN 2     // what digital pin we're connected to
+#define DHT_PIN 2     // what digital pin we're connected to
+#define DHT_PWR 10    // what digital pin is powering DHT11?
 
 // Uncomment whatever type you're using!
 #define DHTTYPE DHT11   // DHT 11
 //#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
 
-// Connect pin 1 (on the left) of the sensor to +5V
+// Connect pin 1 (on the left) of the sensor to +5V (OR DHT_PWR)
 // NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
 // to 3.3V instead of 5V!
-// Connect pin 2 of the sensor to whatever your DHTPIN is
+// Connect pin 2 of the sensor to whatever your DHT_PIN is
 // Connect pin 4 (on the right) of the sensor to GROUND
 // Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
 
@@ -26,7 +28,7 @@ boolean debug=1;   //Set to 1 for console debugging
 // Note that older versions of this library took an optional third parameter to
 // tweak the timings for faster processors.  This parameter is no longer needed
 // as the current DHT reading algorithm adjusts itself to work on faster procs.
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht(DHT_PIN, DHTTYPE);
 
 // Connect VCC of the BMP085/BMP180 sensor to 3.3V (NOT 5.0V!)
 // Connect GND to Ground
@@ -65,15 +67,18 @@ long readVcc() {
 
 void setup()
 {
-  if (debug==1)
-  { 
+  if (debug==1) { 
     Serial.begin(9600);    // Debugging only
     Serial.println("Initializing ...");
   }
 
-  // init DHT11 
+  // set power pins
+  pinMode(DHT_PWR, OUTPUT);
+
+  // init DHT11 and switch off power
   dht.begin();
-       
+  digitalWrite(DHT_PWR, LOW);
+    
   // init BMP 180
   if (!bmp.begin()) {
     Serial.println("Could not find a valid BMP180 sensor, check wiring!");
@@ -83,17 +88,24 @@ void setup()
 	if (!radio.init()) {
 		Serial.println("Init failed!");
 	} else {
-		Serial.println("Init successful.");
+    if (debug==1) Serial.println("Init successful.");
 		radio.setModeIdle();
-		Serial.println("Radio Idle.");
+		if (debug==1) Serial.println("Radio Idle.");
 	}
 }
 
 void loop()
 {
+  // Power up DHT11
+  digitalWrite(DHT_PWR, HIGH);
+  delay(2000);   // time for wake up
+  
   // Read data from DHT11
   sensor.dht11_h = dht.readHumidity();
   sensor.dht11_t = dht.readTemperature();   // Read temperature as Celsius
+
+  // Power down DHT11 (NOTE! The RF 433 Mhz Transmitter is powered from the same power pin)
+  digitalWrite(DHT_PWR, LOW);
 
   // Read data from BMP180
   sensor.bmp180_t = bmp.readTemperature();
@@ -110,8 +122,7 @@ void loop()
 	radio.setModeIdle();
 
 	// Debugging output
-	if (debug==1)
-	{ 
+	if (debug==1) { 
 		Serial.print("DHT11    T:"); 
 		Serial.print(sensor.dht11_t);
 		Serial.print("*C ");
@@ -134,7 +145,13 @@ void loop()
     Serial.println(" mV");
 	}
 
-	// Sleep for next reading    
-	delay(10000);
+  // put 5 mins sleep mode
+  // As lowpower library support maximam 8s, we use for loop to take longer (5mins) sleep
+  // 5x60=300
+  // 300/4=75
+  //for(int i=0;i<75;i++) {
+  for(int i=0;i<3;i++) {
+    LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);    // Instead of delay(4000); 
+  }
 }
 
