@@ -61,14 +61,16 @@ buttondy = 38.0/3;
 buttondia = 5.5; // PIN: made smaller, was 6.0
 buttonheight = 6+0.8; // above PCB, plus some extra tolerance //Edited by CL was 4.9
 
-slider1pos = [12.9-realpcb[0]/2, 18.0-realpcb[1]/2]; // from lower left corner //Edited CL first number was 13.5
+slider1pos = [13.9-realpcb[0]/2, 18.0-realpcb[1]/2]; // from lower left corner //Edited CL first number was 13.5
+    // PIN was 12.9, changed to 13.9
 sliderdy = (42.4-7.0)/2;
 sliderdx = (9.6-5.4)/2 + 0.5; // add tolerance 
 sliderdia = 5.5; // PIN: made smaller, was 6.0
 sliderheight = 4.5; // above PCB
 slidersq = 2.0 + 0.6; // size of square slider button (with some extra tolerance) // Edited by PIN from +.2 to +.6 ?
 
-trimmer1pos = [23.5-realpcb[0]/2, 44.7-realpcb[1]/2]; // from lower left corner
+trimmer1pos = [24.5-realpcb[0]/2, 44.7-realpcb[1]/2]; // from lower left corner
+    // PIN was 23.5, changed to 24.5
 trimmerdy = 53.3-44.7;
 trimmerdia = 4; //Edited by CL was 3.1
 trimmerheight = 6.6; // above PCB //Edited by CL was 4.6
