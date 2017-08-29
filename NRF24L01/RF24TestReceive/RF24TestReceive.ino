@@ -2,19 +2,24 @@
 Receiver for nRF24L01
 
 nRF24L01 pin    Nano pin    Color (arbitrary)
-CE   03         9           orange
-CS/N 04         10          yellow
+CE   03         7           orange
+CS/N 04         8          yellow
 SCK  05         13          green
 MOSI 06         11          blue
 MISO 07         12          purple
 IRQ  08         (none)      grey
 
 Nano pins, in order   Color
-9                     orange
-10                    yellow
+7                     orange
+8                     yellow
 11                    blue
 12                    purple
 13                    green
+
+Note by perivar@nerseth.com!
+We are not using pin 9 and 10 since they are used by the rf24Audio methods since only pin 9 and 10 supports the 16bit timer needed to output to the speaker.
+We are also using LOW_POWER as well as using external power since the nrf24 boards are drawing more amps than the USB port can handle.
+
 */
 
 // SimpleRx - the slave or the receiver
@@ -23,8 +28,8 @@ Nano pins, in order   Color
 #include <RF24.h>
 #include "printf.h"
 
-#define CE_PIN   9
-#define CSN_PIN 10
+#define CE_PIN  7
+#define CSN_PIN 8
 
 const byte thisSlaveAddress[5] = {'R','x','A','A','A'};
 
