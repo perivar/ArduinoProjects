@@ -11,8 +11,9 @@
 //  Updated by Chester Lowrey Dec 2015 for new PCB mounting hole spacing
 //  Also increased spacing around switch holes and decreased switch size for more play
 //  Updated by Per Ivar Nerseth Dec 2016 to make more space for the PCB (too narrow)
+//  Updated by Per Ivar Nerseth Setp 2017 to make space for an 18650 battery with charger and boost module
 
-part = "top"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
+part = "bottom"; // [ demo, all, top, bottom, button, button2, slider, slider2, sliders, buttons ]
 with_batt = true; // [ true, false ]
 
 // real pcb size = 4.6 x 3 inch (thickness: 1.7 mm)
@@ -22,9 +23,9 @@ echo(str("Real pcb size: ", realpcb[0], " x ", realpcb[1], " x ", realpcb[2], " 
 
 // added margin around the pcb for the box
 // PIN: increased clearance from +0.2 to 0.8
-pcb_clearance = 2; // added by PIN
+pcb_clearance = 3; // added by PIN
 
-pcb = [realpcb[0]+pcb_clearance, realpcb[1]+pcb_clearance, realpcb[2]];
+pcb = [realpcb[0]+pcb_clearance, realpcb[1]+pcb_clearance+1, realpcb[2]];
 echo(str("PCB with clearance size: ", pcb[0], " x ", pcb[1], " x ", pcb[2], " mm"));
 
 // pcb mounts
@@ -37,7 +38,16 @@ pcbmntdy = realpcb[1]-2*5; // PIN 5 mm from edges of real PCB
 
 echo(str("PCB Mount: ", pcbmntdx, " x ", pcbmntdy, " mm"));
 
-batt = [26.0, 54.0, 17.0]; // 9 V battery with contact
+// 18650 battery holder (77 mm x 22 mm x 21 mm)
+// with a charger module
+// and a booster module (MT3608)
+holder18650_h = 77;
+holder18650_w = 22;
+holder18650_d = 21;
+
+// 9V battery
+batt = [holder18650_w + 20, holder18650_h, 17]; // 9 V battery with contact (26.0, 54.0, 17.0)
+
 lcdwinsize = [50.0+2, 37.0+2];
 lcdpos = [realpcb[0]/2-lcdwinsize[0]/2-28.5, 17.5-(realpcb[1]/2-lcdwinsize[1]/2)]; // from lower right corner, PIN: was -27.5, changed to -28.5
 lcdpcb = [53+2*10, 43+2*7]; // assume symmetrical, with margin
@@ -105,7 +115,7 @@ twall = 1.4; // PIN: increased from 1.2
 // wall size of bottom - gets a bit flimsy if too thin
 bwall = 2.0; 
 
-tol = 0.25;
+tol = 0.25; // was 0.25
 d = 0.01;
 
 //real2bot = max(pcb2bot, batt[2]-pcb[2]-pcb2lcd-(twall-wall)); 
@@ -181,11 +191,13 @@ module top() {
 		union () { // subtract:
 			// LCD window
 			translate([lcdpos[0], lcdpos[1], -d]) cr2_cube(lcdwinsize[0], lcdwinsize[1], d+twall+d, 0.1, twall/2);
+            
 			// LED hole and cone
 			translate([ledpos[0], ledpos[1], -pcb2lcd]) cylinder(r=leddia/2+tol/2, h=pcb2lcd+twall+d, $fn=20);
 			translate([ledpos[0], ledpos[1], -(pcb2lcd-buttonheight-wall)-d]) {
 				cylinder(r1=leddia+tol, r2=leddia/2+tol, h=2*d+pcb2lcd-buttonheight-wall-lcdframeh, $fn=20);
 			}
+            
 			// button holes
 			for (dy=[0,3]) translate([button1pos[0], button1pos[1]+dy*buttondy, -pcb2lcd]) {
 				cylinder(r = buttondia/2+tol, h=pcb2lcd+twall+d, $fn=60);
@@ -197,15 +209,18 @@ module top() {
 			translate([buttonrpos[0], buttonrpos[1], -pcb2lcd]) {
 				cylinder(r = buttondia/2+tol, h=pcb2lcd+twall+d, $fn=60);
 			}
+            
 			// slider holes
 			for (dy=[0,1,2]) translate([slider1pos[0], slider1pos[1]+dy*sliderdy, -pcb2lcd]) {
 				hull() {
 					for (dx=[-sliderdx,sliderdx]) translate([dx, 0, 0]) cylinder(r = sliderdia/2+tol, h=pcb2lcd+twall+d, $fn=60);
 				}
 			}
+            
 			// trimmer hole
 			for (dy=[0,1]) translate([trimmer1pos[0], trimmer1pos[1]+dy*trimmerdy, -pcb2lcd]) cylinder(r=trimmerdia/2+tol/2, h=pcb2lcd+twall+d, $fn=20);
-			// LCD pcb
+			
+            // LCD pcb
 			translate([lcdpos[0], lcdpos[1], -pcb2lcd]) c_cube(lcdpcb[0], lcdpcb[1], pcb2lcd-lcdframeh);
 
 			if (with_batt) {
@@ -235,11 +250,15 @@ module sidewalls() {
 			translate([(with_batt ? batt[0]/2+tol+wall/2 : 0), 0, -real2bot-pcb[2]-pcb2lcd-bwall-d]) cr_cube(pcb[0]+2*tol+(with_batt ? batt[0]+wall+2*tol : 0), pcb[1]+2*tol, d+bwall+tol, caser/2); 
 			// room for everything in top wall
 			translate([(with_batt ? batt[0]/2+tol+wall/2 : 0), 0, -d]) cr_cube(pcb[0]+2*wall+4*tol+(with_batt ? batt[0]+wall+2*tol : 0), pcb[1]+batt[1]+2*wall+4*tol, twall+2*d, caser+tol);
-			// room for pcb
+			
+            // room for pcb
 			translate([0, 0, -real2bot-pcb[2]-pcb2lcd]) c_cube(pcb[0]+2*tol, pcb[1]+2*tol, real2bot+pcb[2]+pcb2lcd+d); 
 
-			if (with_batt) translate([pcb[0]/2+batt[0]/2+2*tol+wall, 0, -real2bot-pcb[2]-pcb2lcd]) c_cube(batt[0]+2*tol, pcb[1]+2*tol, real2bot+pcb[2]+pcb2lcd+d); // room for battery
-
+			if (with_batt) { 
+                translate([pcb[0]/2+holder18650_w/2+2*tol+wall, 0, -real2bot-pcb[2]-pcb2lcd]) c_cube(holder18650_w+2*tol, pcb[1]+2*tol, real2bot+pcb[2]+pcb2lcd+d); // room for battery
+                
+                translate([pcb[0]/2+holder18650_w+2*tol+wall+11, 0, -real2bot-pcb[2]-pcb2lcd]) c_cube(18+2*tol, pcb[1]+2*tol, real2bot+pcb[2]+pcb2lcd+d); // room for charger board
+            }
 			// BNC hole
 			translate([bncpos, pcb[1]/2, -pcb2lcd+bncdia/2]) rotate([-90,0,0]) {
 				cylinder(r=bncdia/2+tol, h=tol+wall+2*d, $fn=60); 
@@ -261,7 +280,22 @@ module sidewalls() {
 
 			if (with_batt) {
 				switchhole();
-				translate([pcb[0]/2, pcb[1]/2-12.0, -pcb2lcd]) hull () { // hole for battery wire
+                
+                // charger plug
+                // 7.5 mm
+                // 3 mm
+                // 1.75 mm thickness
+                
+                miniusbpos = pcb[0]/2+holder18650_w+8.5;
+                translate([miniusbpos, -pcb[1]/2-wall-2*tol, -pcb2lcd+9.5-1.75]) 
+                cube([7.5+1, 3, 3+1]);
+                
+				translate([pcb[0]/2, pcb[1]/2-12, -pcb2lcd-1]) hull () { // hole for battery wire
+					rotate([0, 90, 0]) cylinder(r=2.5/2, h=tol+wall+tol, $fn=10);
+					translate([0, 0, -pcb2bot]) rotate([0, 90, 0]) cylinder(r=2.5/2, h=tol+wall+tol, $fn=10);
+				}
+                
+                translate([pcb[0]/2+holder18650_w+2, pcb[1]/2-12, -pcb2lcd-1-1]) hull () { // hole for battery wire
 					rotate([0, 90, 0]) cylinder(r=2.5/2, h=tol+wall+tol, $fn=10);
 					translate([0, 0, -pcb2bot]) rotate([0, 90, 0]) cylinder(r=2.5/2, h=tol+wall+tol, $fn=10);
 				}
@@ -348,7 +382,7 @@ module switchwall() {
 }
 
 module switchhole() {
-	translate([pcb[0]/2+batt[0]/2+2*tol+wall, pcb[1]/2, -(pcb2bot+pcb[2]+pcb2lcd)+batt[2]/2]) {
+	translate([pcb[0]/2+batt[0]/2+2*tol+wall+12, pcb[1]/2, -(pcb2bot+pcb[2]+pcb2lcd)+batt[2]/2]) {
 		rotate([-90, 0, 0]) cylinder(r=switchneck/2+tol, h=tol+wall+d+1, $fn=20);
 	}
 }
@@ -375,8 +409,8 @@ module switchguard() {
 
 module tswitch() {
 	translate([pcb[0]/2+batt[0]/2+2*tol+wall, -pcb[1]/2+tol+batt[1]+tol+switchbody, -(pcb2bot+pcb[2]+pcb2lcd)+batt[2]/2]) {
-		rotate([-90, 0, 0]) cylinder(r=switchneck/2, h=9.0, $fn=20);
-		rotate([-90, 0, 0]) cylinder(r=2.0/2, h=19.0, $fn=10);
+		rotate([-90, 0, 0]) cylinder(r=switchneck/2, h=4.0, $fn=20);
+		rotate([-90, 0, 0]) cylinder(r=2.0/2, h=16.0, $fn=10);
 		rotate([90, 0, 0]) c_cube(13.2, 8.0, 10.5);
 		for (dx = [-5.08, 0, 5.08]) rotate([90, 0, 0]) translate([dx, 0, 0]) cylinder(r=1.1, h=switchbody);
 	}
@@ -445,9 +479,9 @@ module slider2() {
 
 // output parts
 if (part=="demo") top();
-if (part=="top") rotate([180, 0, 0]) top();
+if (part=="top") translate([0,0,wall]) rotate([180, 0, 0]) top();
 
-if (part=="demo" || part=="bottom") bottom();
+if (part=="demo" || part=="bottom") translate([0,0,21.7]) bottom();
 
 if (part=="demo") color("green") {
 	translate([-pcb[0]/2, -pcb[1]/2, -pcb2lcd-pcb[2]]) cube(pcb); 
